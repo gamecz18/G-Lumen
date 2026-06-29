@@ -1,0 +1,43 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:G_Lumen.ViewModels"
+        xmlns:views="using:G_Lumen.Views"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="240"
+        x:Class="G_Lumen.Views.MonitorPopup"
+        x:DataType="vm:MainViewModel"
+        Title="G-Lumen"
+        Width="300"
+        SizeToContent="Height"
+        MaxHeight="600"
+        CanResize="False"
+        ShowInTaskbar="False"
+        WindowDecorations="None"
+        Topmost="True"
+        Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+
+    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+            BorderThickness="1"
+            Padding="0,8">
+        <StackPanel Spacing="2">
+            <TextBlock Text="Jas monitorů"
+                       FontWeight="Bold"
+                       Margin="12,4,12,8"/>
+
+            <ItemsControl ItemsSource="{Binding Monitors}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="vm:MonitorViewModel">
+                        <views:MonitorSlider/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <TextBlock Text="Žádné monitory s DDC/CI nenalezeny."
+                       Margin="12,8"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                       IsVisible="{Binding !Monitors.Count}"/>
+        </StackPanel>
+    </Border>
+</Window>

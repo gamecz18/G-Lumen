@@ -1,0 +1,34 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:G_Lumen.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="280"
+             x:Class="G_Lumen.Views.MonitorSlider"
+             x:DataType="vm:MonitorViewModel">
+
+    <StackPanel Margin="12,8" Spacing="4">
+        <DockPanel>
+            <CheckBox DockPanel.Dock="Right"
+                      Content="HDR"
+                      VerticalAlignment="Center"
+                      IsChecked="{Binding HdrMode, Mode=TwoWay}"
+                      IsVisible="{Binding SupportsHdr}"
+                      ToolTip.Tip="Ovládat jas přes SDR white level (pro HDR režim)"/>
+            <TextBlock DockPanel.Dock="Right"
+                       Text="{Binding Brightness}"
+                       MinWidth="28"
+                       Margin="0,0,8,0"
+                       HorizontalAlignment="Right"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+            <TextBlock Text="{Binding Name}"
+                       FontWeight="SemiBold"
+                       VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis"/>
+        </DockPanel>
+        <Slider Minimum="0" Maximum="100"
+                TickFrequency="1" IsSnapToTickEnabled="True"
+                Value="{Binding Brightness, Mode=TwoWay}"/>
+    </StackPanel>
+</UserControl>

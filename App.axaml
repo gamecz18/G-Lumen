@@ -1,0 +1,41 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="G_Lumen.App"
+             xmlns:local="using:G_Lumen"
+             xmlns:vm="using:G_Lumen.ViewModels"
+             x:DataType="vm:MainViewModel"
+             RequestedThemeVariant="Default">
+             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+    <Application.DataTemplates>
+        <local:ViewLocator/>
+    </Application.DataTemplates>
+
+    <TrayIcon.Icons>
+        <TrayIcons>
+            <TrayIcon Icon="/Assets/avalonia-logo.ico"
+                      ToolTipText="G-Lumen"
+                      Clicked="OnTrayClicked">
+                <TrayIcon.Menu>
+                    <NativeMenu>
+                        <NativeMenuItem Header="Obnovit monitory"
+                                        Command="{Binding RefreshCommand}"/>
+                        <NativeMenuItem Header="Nastavení…"
+                                        Command="{Binding OpenSettingsCommand}"/>
+                        <NativeMenuItemSeparator/>
+                        <NativeMenuItem Header="Spouštět při startu"
+                                        ToggleType="CheckBox"
+                                        IsChecked="{Binding AutostartEnabled, Mode=TwoWay}"/>
+                        <NativeMenuItemSeparator/>
+                        <NativeMenuItem Header="Konec"
+                                        Command="{Binding ExitCommand}"/>
+                    </NativeMenu>
+                </TrayIcon.Menu>
+            </TrayIcon>
+        </TrayIcons>
+    </TrayIcon.Icons>
+
+    <Application.Styles>
+        <FluentTheme />
+    </Application.Styles>
+</Application>
