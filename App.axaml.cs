@@ -57,6 +57,7 @@ namespace G_Lumen
             }
             catch (Exception ex)
             {
+
                 _log.LogCritical(ex, "OnFrameworkInitializationCompleted failed");
                 throw;
             }
