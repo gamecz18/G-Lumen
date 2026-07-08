@@ -35,13 +35,15 @@ namespace G_Lumen
                     var settings = new SettingsStore();
                     settings.Load();
 
-                    _ddc = new DdcCiService(AppLog.CreateLogger<DdcCiService>());
+                    var traffic = new TrafficLog(AppLog.TrafficLogPath);
+                    _ddc = new DdcCiService(AppLog.CreateLogger<DdcCiService>(), traffic);
                     _mainViewModel = new MainViewModel(
                         _ddc,
-                        new HdrService(AppLog.CreateLogger<HdrService>()),
+                        new HdrService(AppLog.CreateLogger<HdrService>(), traffic),
                         settings,
                         new AutostartManager(),
-                        AppLog.CreateLogger<MainViewModel>());
+                        AppLog.CreateLogger<MainViewModel>(),
+                        traffic);
 
                     // DataContext aplikace = zdroj pro bindingy tray menu (NativeMenu).
                     DataContext = _mainViewModel;
@@ -58,7 +60,7 @@ namespace G_Lumen
             catch (Exception ex)
             {
 
-                _log.LogCritical(ex, "OnFrameworkInitializationCompleted failed");
+                _log.LogCritical(ex, "Inicializace aplikace selhala");
                 throw;
             }
         }
@@ -81,7 +83,7 @@ namespace G_Lumen
             }
             catch (Exception ex)
             {
-                _log.LogError(ex, "Showing the popup failed");
+                _log.LogError(ex, "Zobrazení popupu selhalo");
             }
         }
     }

@@ -3,32 +3,123 @@
              xmlns:vm="using:G_Lumen.ViewModels"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="280"
+             mc:Ignorable="d" d:DesignWidth="320"
              x:Class="G_Lumen.Views.MonitorSlider"
              x:DataType="vm:MonitorViewModel">
 
-    <StackPanel Margin="12,8" Spacing="4">
-        <DockPanel>
-            <CheckBox DockPanel.Dock="Right"
-                      Content="HDR"
-                      VerticalAlignment="Center"
-                      IsChecked="{Binding HdrMode, Mode=TwoWay}"
-                      IsVisible="{Binding SupportsHdr}"
-                      ToolTip.Tip="Ovládat jas přes SDR white level (pro HDR režim)"/>
-            <TextBlock DockPanel.Dock="Right"
-                       Text="{Binding Brightness}"
-                       MinWidth="28"
-                       Margin="0,0,8,0"
-                       HorizontalAlignment="Right"
-                       VerticalAlignment="Center"
-                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-            <TextBlock Text="{Binding Name}"
-                       FontWeight="SemiBold"
-                       VerticalAlignment="Center"
-                       TextTrimming="CharacterEllipsis"/>
-        </DockPanel>
-        <Slider Minimum="0" Maximum="100"
-                TickFrequency="1" IsSnapToTickEnabled="True"
-                Value="{Binding Brightness, Mode=TwoWay}"/>
-    </StackPanel>
+    <UserControl.Styles>
+        <Style Selector="TextBlock.glyph">
+            <Setter Property="FontFamily" Value="Segoe Fluent Icons,Segoe MDL2 Assets"/>
+        </Style>
+        <Style Selector="TextBlock.dim">
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+        </Style>
+        <Style Selector="ToggleButton.flat">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="CornerRadius" Value="6"/>
+        </Style>
+        <Style Selector="SelectableTextBlock.detail">
+            <Setter Property="FontFamily" Value="Cascadia Mono,Consolas"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+        <Style Selector="TextBlock.detailKey">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+            <Setter Property="Margin" Value="0,1,8,1"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Border Margin="10,3" Padding="12,8,12,10" CornerRadius="8"
+            Background="{DynamicResource SystemControlBackgroundListLowBrush}">
+        <StackPanel Spacing="2">
+
+            <!-- Hlavička: název + cesta, HDR přepínač, detail -->
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Name}"
+                               FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Classes="dim"
+                               Text="{Binding Subtitle}"
+                               FontSize="10"/>
+                </StackPanel>
+
+                <ToggleButton Grid.Column="1"
+                              Content="HDR"
+                              FontSize="10"
+                              FontWeight="SemiBold"
+                              Padding="7,3"
+                              CornerRadius="4"
+                              Margin="4,0"
+                              VerticalAlignment="Center"
+                              IsChecked="{Binding HdrMode, Mode=TwoWay}"
+                              IsVisible="{Binding SupportsHdr}"
+                              ToolTip.Tip="Ovládat jas přes SDR white level (pro zapnuté HDR)"/>
+
+                <ToggleButton Grid.Column="2"
+                              Classes="flat"
+                              VerticalAlignment="Center"
+                              IsChecked="{Binding IsExpanded, Mode=TwoWay}"
+                              ToolTip.Tip="Technické detaily monitoru">
+                    <TextBlock Classes="glyph" Text="&#xE946;" FontSize="13"/>
+                </ToggleButton>
+            </Grid>
+
+            <!-- Slider -->
+            <DockPanel Margin="0,4,0,0">
+                <TextBlock DockPanel.Dock="Right"
+                           MinWidth="42"
+                           TextAlignment="Right"
+                           VerticalAlignment="Center"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           Text="{Binding Brightness, StringFormat='{}{0} %'}"/>
+                <TextBlock DockPanel.Dock="Left"
+                           Classes="glyph dim"
+                           Text="&#xE706;"
+                           FontSize="13"
+                           VerticalAlignment="Center"
+                           Margin="0,0,10,0"/>
+                <Slider Minimum="0" Maximum="100"
+                        TickFrequency="1" IsSnapToTickEnabled="True"
+                        Value="{Binding Brightness, Mode=TwoWay}"/>
+            </DockPanel>
+
+            <!-- Low-level detail -->
+            <Border IsVisible="{Binding IsExpanded}"
+                    Margin="0,6,0,0" Padding="10,7" CornerRadius="6"
+                    Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+                <Grid ColumnDefinitions="60,*"
+                      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+
+                    <TextBlock Classes="detailKey" Text="ID"/>
+                    <SelectableTextBlock Grid.Column="1" Classes="detail"
+                                         Text="{Binding StableId}" Margin="0,1"/>
+
+                    <TextBlock Grid.Row="1" Classes="detailKey" Text="GDI"/>
+                    <SelectableTextBlock Grid.Row="1" Grid.Column="1" Classes="detail"
+                                         Text="{Binding GdiDeviceName}" Margin="0,1"/>
+
+                    <TextBlock Grid.Row="2" Classes="detailKey" Text="Handle"/>
+                    <SelectableTextBlock Grid.Row="2" Grid.Column="1" Classes="detail"
+                                         Text="{Binding HandleHex}" Margin="0,1"/>
+
+                    <TextBlock Grid.Row="3" Classes="detailKey" Text="HDR"/>
+                    <SelectableTextBlock Grid.Row="3" Grid.Column="1" Classes="detail"
+                                         Text="{Binding HdrStatusText}" Margin="0,1"/>
+
+                    <TextBlock Grid.Row="4" Classes="detailKey" Text="Zápis"/>
+                    <SelectableTextBlock Grid.Row="4" Grid.Column="1" Classes="detail"
+                                         Text="{Binding WriteInfo}" Margin="0,1"/>
+
+                    <TextBlock Grid.Row="5" Classes="detailKey" Text="Čtení"/>
+                    <SelectableTextBlock Grid.Row="5" Grid.Column="1" Classes="detail"
+                                         Text="{Binding ReadInfo}" Margin="0,1"/>
+                </Grid>
+            </Border>
+        </StackPanel>
+    </Border>
 </UserControl>

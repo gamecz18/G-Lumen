@@ -20,14 +20,16 @@ namespace G_Lumen.Services
         public const double MaxNits = 480.0;
 
         private readonly ILogger _log;
+        private readonly TrafficLog _traffic;
 
         // GDI device name (\\.\DISPLAYx, upper) → cíl pro DisplayConfig dotazy.
         private readonly Dictionary<string, (LUID adapterId, uint targetId)> _targets =
             new(StringComparer.OrdinalIgnoreCase);
 
-        public HdrService(ILogger logger)
+        public HdrService(ILogger logger, TrafficLog traffic)
         {
             _log = logger;
+            _traffic = traffic;
         }
 
         /// <summary>Znovu načte aktivní DisplayConfig cesty a namapuje GDI názvy na cíle.</summary>
@@ -44,9 +46,12 @@ namespace G_Lumen.Services
                 int qrc = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, ref pathCount, paths, ref modeCount, modes, IntPtr.Zero);
                 if (qrc != ERROR_SUCCESS)
                 {
-                    _log.LogWarning("QueryDisplayConfig failed rc={Rc}", qrc);
+                    _traffic.In("DispCfg", "QueryDisplayConfig selhalo", false, qrc);
+                    _log.LogWarning("QueryDisplayConfig selhalo rc={Rc}", qrc);
                     return;
                 }
+
+                _traffic.In("DispCfg", $"QueryDisplayConfig → {pathCount} aktivních cest", true);
 
                 for (int i = 0; i < pathCount; i++)
                 {
@@ -73,7 +78,7 @@ namespace G_Lumen.Services
             }
             catch (Exception ex)
             {
-                _log.LogWarning(ex, "RefreshPaths failed");
+                _log.LogWarning(ex, "Načtení DisplayConfig cest selhalo");
             }
         }
 
@@ -106,15 +111,21 @@ namespace G_Lumen.Services
                     header = MakeHeader(DISPLAYCONFIG_DEVICE_INFO_GET_SDR_WHITE_LEVEL,
                         (uint)System.Runtime.InteropServices.Marshal.SizeOf<DISPLAYCONFIG_SDR_WHITE_LEVEL>(), t)
                 };
-                if (DisplayConfigGetDeviceInfo(ref packet) != ERROR_SUCCESS)
+                int rc = DisplayConfigGetDeviceInfo(ref packet);
+                if (rc != ERROR_SUCCESS)
+                {
+                    _traffic.In("DispCfg", $"GetSdrWhiteLevel · {gdiDeviceName}", false, rc);
                     return false;
+                }
 
                 nits = packet.SDRWhiteLevel * 80.0 / 1000.0;
+                _traffic.In("DispCfg",
+                    $"GetSdrWhiteLevel = {nits:0} nit (raw {packet.SDRWhiteLevel}) · {gdiDeviceName}", true);
                 return true;
             }
             catch (Exception ex)
             {
-                _log.LogWarning(ex, "TryGetSdrNits failed");
+                _log.LogWarning(ex, "Čtení SDR white level selhalo");
                 return false;
             }
         }
@@ -136,15 +147,20 @@ namespace G_Lumen.Services
                     finalValue = 1,
                 };
                 int rc = DisplayConfigSetDeviceInfo(ref packet);
+
+                _traffic.Out("DispCfg",
+                    $"SetSdrWhiteLevel = {nits:0} nit (raw {packet.SDRWhiteLevel}) · {gdiDeviceName}",
+                    rc == ERROR_SUCCESS, rc == ERROR_SUCCESS ? null : rc);
+
                 if (rc != ERROR_SUCCESS)
-                    _log.LogWarning("DisplayConfigSetDeviceInfo rc={Rc} ({Gdi})", rc, gdiDeviceName);
+                    _log.LogWarning("Zápis SDR white level selhal rc={Rc} ({Gdi})", rc, gdiDeviceName);
                 else
-                    _log.LogDebug("SDR white level {Nits} nits -> {Gdi}", nits, gdiDeviceName);
+                    _log.LogDebug("SDR white level {Nits} nit -> {Gdi}", nits, gdiDeviceName);
                 return rc == ERROR_SUCCESS;
             }
             catch (Exception ex)
             {
-                _log.LogWarning(ex, "SetSdrNits failed");
+                _log.LogWarning(ex, "Zápis SDR white level selhal (výjimka)");
                 return false;
             }
         }
@@ -172,13 +188,22 @@ namespace G_Lumen.Services
                 };
                 int rc = DisplayConfigGetDeviceInfo(ref info);
                 if (rc == ERROR_SUCCESS)
+                {
+                    _traffic.In("DispCfg",
+                        $"GetAdvancedColorInfo · {gdiDeviceName}: HDR podpora={(info.AdvancedColorSupported ? "ano" : "ne")}, aktivní={(info.AdvancedColorEnabled ? "ano" : "ne")}",
+                        true);
                     _log.LogDebug("HDR {Gdi}: supported={Sup} enabled={En}",
                         gdiDeviceName, info.AdvancedColorSupported, info.AdvancedColorEnabled);
+                }
+                else
+                {
+                    _traffic.In("DispCfg", $"GetAdvancedColorInfo · {gdiDeviceName}", false, rc);
+                }
                 return rc == ERROR_SUCCESS;
             }
             catch (Exception ex)
             {
-                _log.LogDebug(ex, "TryGetAdvancedColor failed");
+                _log.LogDebug(ex, "Čtení HDR stavu selhalo (výjimka)");
                 return false;
             }
         }

@@ -1,6 +1,7 @@
 using System;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 
 namespace G_Lumen.Views
 {
@@ -15,6 +16,14 @@ namespace G_Lumen.Views
             InitializeComponent();
             WindowStartupLocation = WindowStartupLocation.Manual;
             Deactivated += (_, _) => Hide();
+
+            // SizeToContent: rozbalení diagnostiky / detailu monitoru změní výšku
+            // → okno se musí znovu přilepit k liště.
+            SizeChanged += (_, _) =>
+            {
+                if (IsVisible)
+                    PositionBottomRight();
+            };
         }
 
         /// <summary>Zobrazí popup vpravo dole u systémové lišty.</summary>
@@ -34,6 +43,19 @@ namespace G_Lumen.Views
             PositionBottomRight();
         }
 
+        /// <summary>
+        /// Tažení úchytu nad diagnostickým logem: mění výšku výpisu.
+        /// Okno je ukotvené dole, takže růst logu vizuálně roztahuje popup nahoru.
+        /// </summary>
+        private void OnLogResizeDragDelta(object? sender, VectorEventArgs e)
+        {
+            double current = double.IsNaN(LogScroll.Height)
+                ? LogScroll.Bounds.Height
+                : LogScroll.Height;
+
+            LogScroll.Height = Math.Clamp(current - e.Vector.Y, 90, 600);
+        }
+
         private void PositionBottomRight()
         {
             var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
@@ -42,6 +64,9 @@ namespace G_Lumen.Views
 
             var area = screen.WorkingArea; // v pixelech, bez taskbaru
             double scale = screen.Scaling;
+
+            // Popup nesmí přerůst pracovní plochu (jinak by se obsah ořezával).
+            MaxHeight = Math.Max(300, area.Height / scale - 16);
 
             int width = (int)Math.Round(Math.Max(ClientSize.Width, Width) * scale);
             int height = (int)Math.Round(Math.Max(ClientSize.Height, Height) * scale);

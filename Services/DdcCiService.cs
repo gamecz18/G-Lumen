@@ -19,15 +19,17 @@ namespace G_Lumen.Services
         private const byte VcpBrightness = 0x10;
 
         private readonly ILogger _log;
+        private readonly TrafficLog _traffic;
 
         // Handle fyzických monitorů držíme naživu po celou dobu běhu;
         // uvolníme je hromadně v Dispose přes DestroyPhysicalMonitors.
         private readonly List<NativeMethods.PHYSICAL_MONITOR[]> _ownedHandles = new();
         private bool _disposed;
 
-        public DdcCiService(ILogger logger)
+        public DdcCiService(ILogger logger, TrafficLog traffic)
         {
             _log = logger;
+            _traffic = traffic;
         }
 
         /// <summary>
@@ -63,7 +65,11 @@ namespace G_Lumen.Services
 
                 var pms = new NativeMethods.PHYSICAL_MONITOR[count];
                 if (!NativeMethods.GetPhysicalMonitorsFromHMONITOR(h, count, pms))
+                {
+                    _traffic.In("GDI", $"GetPhysicalMonitors selhalo ({mi.szDevice})",
+                        false, Marshal.GetLastWin32Error());
                     continue;
+                }
 
                 _ownedHandles.Add(pms);
 
@@ -84,9 +90,13 @@ namespace G_Lumen.Services
                         Description = desc,
                         GdiDeviceName = mi.szDevice,
                     });
+
+                    _traffic.In("GDI",
+                        $"nalezen {desc} · {mi.szDevice} · handle 0x{pm.hPhysicalMonitor.ToInt64():X}", true);
                 }
             }
 
+            _traffic.In("GDI", $"EnumDisplayMonitors → {result.Count} fyzických monitorů", true);
             return result;
         }
 
@@ -108,6 +118,8 @@ namespace G_Lumen.Services
                 {
                     current = cur;
                     max = mx == 0 ? 100 : mx;
+                    _traffic.In("DDC/CI",
+                        $"GetMonitorBrightness → jas {cur}/{max} · {Tag(monitor)}", true);
                     return true;
                 }
 
@@ -117,16 +129,21 @@ namespace G_Lumen.Services
                 {
                     current = vcur;
                     max = vmax == 0 ? 100 : vmax;
+                    _traffic.In("DDC/CI",
+                        $"GetVCPFeature(0x10 jas) → {vcur}/{max} · {Tag(monitor)}", true);
                     return true;
                 }
 
-                _log.LogDebug("Brightness read failed err={Err} ({Monitor})",
-                    Marshal.GetLastWin32Error(), monitor.Description);
+                int err = Marshal.GetLastWin32Error();
+                _traffic.In("DDC/CI",
+                    $"GetVCPFeature(0x10 jas) — monitor neodpověděl · {Tag(monitor)}", false, err);
+                _log.LogDebug("Čtení jasu selhalo err={Err} ({Gdi} {Monitor})",
+                    err, monitor.GdiDeviceName, monitor.Description);
                 return false;
             }
             catch (Exception ex)
             {
-                _log.LogWarning(ex, "TryGetBrightness exception ({Monitor})", monitor.Description);
+                _log.LogWarning(ex, "Výjimka při čtení jasu ({Monitor})", monitor.Description);
                 return false;
             }
         }
@@ -142,19 +159,29 @@ namespace G_Lumen.Services
             try
             {
                 bool ok = NativeMethods.SetVCPFeature(monitor.HPhysical, VcpBrightness, value);
+                int err = ok ? 0 : Marshal.GetLastWin32Error();
+
+                _traffic.Out("DDC/CI",
+                    $"SetVCPFeature(0x10 jas, {value}) · {Tag(monitor)}", ok, ok ? null : err);
+
                 if (!ok)
-                    _log.LogWarning("Brightness write failed err={Err} ({Monitor})",
-                        Marshal.GetLastWin32Error(), monitor.Description);
+                    _log.LogWarning("Zápis jasu selhal err={Err} hodnota={Value} ({Gdi} {Monitor})",
+                        err, value, monitor.GdiDeviceName, monitor.Description);
                 else
-                    _log.LogDebug("Brightness {Value} -> {Monitor}", value, monitor.Description);
+                    _log.LogDebug("Jas {Value} -> {Gdi} {Monitor}",
+                        value, monitor.GdiDeviceName, monitor.Description);
                 return ok;
             }
             catch (Exception ex)
             {
-                _log.LogWarning(ex, "SetBrightness exception ({Monitor})", monitor.Description);
+                _log.LogWarning(ex, "Výjimka při zápisu jasu ({Monitor})", monitor.Description);
                 return false;
             }
         }
+
+        /// <summary>Krátký, jednoznačný popis monitoru pro traffic log
+        /// (Description sám o sobě nestačí — "Generic PnP Monitor" bývá vícekrát).</summary>
+        private static string Tag(MonitorInfo m) => $"{m.GdiDeviceName} ({m.Description})";
 
         private string TryGetMonitorDeviceId(string adapterDeviceName)
         {
@@ -173,7 +200,7 @@ namespace G_Lumen.Services
             }
             catch (Exception ex)
             {
-                _log.LogDebug(ex, "TryGetMonitorDeviceId exception");
+                _log.LogDebug(ex, "Výjimka při zjišťování DeviceID monitoru");
             }
 
             // Fallback na název adaptéru (\\.\DISPLAYx) — méně stabilní, ale lepší než nic.
@@ -190,7 +217,7 @@ namespace G_Lumen.Services
                 }
                 catch (Exception ex)
                 {
-                    _log.LogDebug(ex, "DestroyPhysicalMonitors exception");
+                    _log.LogDebug(ex, "Výjimka při uvolňování handlů monitorů");
                 }
             }
             _ownedHandles.Clear();

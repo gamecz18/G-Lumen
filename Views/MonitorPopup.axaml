@@ -2,42 +2,179 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:G_Lumen.ViewModels"
         xmlns:views="using:G_Lumen.Views"
+        xmlns:svc="using:G_Lumen.Services"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="240"
+        mc:Ignorable="d" d:DesignWidth="340" d:DesignHeight="300"
         x:Class="G_Lumen.Views.MonitorPopup"
         x:DataType="vm:MainViewModel"
         Title="G-Lumen"
-        Width="300"
+        Width="340"
         SizeToContent="Height"
-        MaxHeight="600"
+        MaxHeight="900"
         CanResize="False"
         ShowInTaskbar="False"
         WindowDecorations="None"
         Topmost="True"
-        Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+        TransparencyLevelHint="Transparent"
+        Background="Transparent">
 
-    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+    <Window.Styles>
+        <Style Selector="Button.icon, ToggleButton.icon">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="7"/>
+            <Setter Property="CornerRadius" Value="6"/>
+        </Style>
+        <Style Selector="TextBlock.glyph">
+            <Setter Property="FontFamily" Value="Segoe Fluent Icons,Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+        <Style Selector="TextBlock.mono">
+            <Setter Property="FontFamily" Value="Cascadia Mono,Consolas"/>
+            <Setter Property="FontSize" Value="10"/>
+        </Style>
+        <Style Selector="TextBlock.dim">
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+        </Style>
+    </Window.Styles>
+
+    <Border CornerRadius="10"
+            ClipToBounds="True"
+            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
             BorderThickness="1"
-            Padding="0,8">
-        <StackPanel Spacing="2">
-            <TextBlock Text="Jas monitorů"
-                       FontWeight="Bold"
-                       Margin="12,4,12,8"/>
+            Padding="0,0,0,8">
+        <DockPanel>
 
-            <ItemsControl ItemsSource="{Binding Monitors}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate DataType="vm:MonitorViewModel">
-                        <views:MonitorSlider/>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+            <!-- Hlavička -->
+            <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto,Auto" Margin="14,10,8,6">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="G-Lumen" FontWeight="Bold" FontSize="14"/>
+                    <TextBlock Classes="dim" Text="Jas monitorů" FontSize="10"/>
+                </StackPanel>
 
-            <TextBlock Text="Žádné monitory s DDC/CI nenalezeny."
-                       Margin="12,8"
-                       TextWrapping="Wrap"
-                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                       IsVisible="{Binding !Monitors.Count}"/>
-        </StackPanel>
+                <ToggleButton Grid.Column="1" Classes="icon"
+                              IsChecked="{Binding ShowDiagnostics, Mode=TwoWay}"
+                              ToolTip.Tip="Diagnostika — provoz DDC/CI a DisplayConfig">
+                    <TextBlock Classes="glyph" Text="&#xE9D9;"/>
+                </ToggleButton>
+
+                <Button Grid.Column="2" Classes="icon"
+                        Command="{Binding RefreshCommand}"
+                        ToolTip.Tip="Znovu najít monitory">
+                    <TextBlock Classes="glyph" Text="&#xE72C;"/>
+                </Button>
+
+                <Button Grid.Column="3" Classes="icon"
+                        Command="{Binding OpenSettingsCommand}"
+                        ToolTip.Tip="Nastavení">
+                    <TextBlock Classes="glyph" Text="&#xE713;"/>
+                </Button>
+            </Grid>
+
+            <!-- Diagnostika: co jde do monitorů a co se vrací.
+                 Dokovaná dole → při přetečení okna scrollují monitory, log zůstává celý. -->
+            <StackPanel DockPanel.Dock="Bottom" IsVisible="{Binding ShowDiagnostics}">
+
+                <!-- Úchyt: tažením nahoru/dolů se mění výška logu -->
+                <Thumb Height="12" Cursor="SizeNorthSouth"
+                       DragDelta="OnLogResizeDragDelta"
+                       ToolTip.Tip="Tažením změníte výšku výpisu">
+                    <Thumb.Template>
+                        <ControlTemplate>
+                            <Border Background="Transparent">
+                                <Border Width="40" Height="4" CornerRadius="2"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Thumb.Template>
+                </Thumb>
+
+                <Grid ColumnDefinitions="*,Auto,Auto" Margin="14,0,8,2">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Provoz na sběrnici" FontWeight="SemiBold" FontSize="12"/>
+                        <TextBlock Classes="dim" FontSize="10"
+                                   Text="→ zápis do monitoru · ← čtení / odpověď"/>
+                    </StackPanel>
+
+                    <Button Grid.Column="1" Classes="icon"
+                            Command="{Binding ClearTrafficCommand}"
+                            ToolTip.Tip="Vymazat výpis">
+                        <TextBlock Classes="glyph" Text="&#xE74D;" FontSize="13"/>
+                    </Button>
+
+                    <Button Grid.Column="2" Classes="icon"
+                            Command="{Binding OpenLogFolderCommand}"
+                            ToolTip.Tip="Otevřít složku s logy (g-lumen-*.log, traffic-*.log)">
+                        <TextBlock Classes="glyph" Text="&#xE838;" FontSize="13"/>
+                    </Button>
+                </Grid>
+
+                <!-- Vodorovný posuvník dole: dlouhé řádky se neořezávají, jdou doscrollovat -->
+                <ScrollViewer x:Name="LogScroll" Height="200" Margin="8,4,8,0"
+                              HorizontalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Traffic.Entries}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="svc:TrafficEntry">
+                                <StackPanel Orientation="Horizontal"
+                                            Margin="6,1"
+                                            ToolTip.Tip="{Binding Tooltip}">
+                                    <TextBlock Classes="mono dim"
+                                               Text="{Binding TimeText}"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Classes="mono"
+                                               Text="{Binding Arrow}"
+                                               Margin="6,0"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource SystemControlForegroundAccentBrush}"/>
+                                    <TextBlock Classes="mono dim"
+                                               Text="{Binding Channel}"
+                                               MinWidth="50"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Classes="mono"
+                                               Text="OK"
+                                               MinWidth="52"
+                                               Margin="6,0"
+                                               Foreground="#4CAF50"
+                                               VerticalAlignment="Center"
+                                               IsVisible="{Binding Success}"/>
+                                    <TextBlock Classes="mono"
+                                               Text="{Binding StatusText}"
+                                               MinWidth="52"
+                                               Margin="6,0"
+                                               Foreground="#E53935"
+                                               VerticalAlignment="Center"
+                                               IsVisible="{Binding !Success}"/>
+                                    <TextBlock Classes="mono"
+                                               Text="{Binding Message}"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </StackPanel>
+
+            <!-- Monitory (vyplní zbytek; při přetečení scrollují) -->
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                <StackPanel>
+                    <ItemsControl ItemsSource="{Binding Monitors}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="vm:MonitorViewModel">
+                                <views:MonitorSlider/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Text="Žádné monitory s DDC/CI nenalezeny."
+                               Margin="14,8"
+                               TextWrapping="Wrap"
+                               Classes="dim"
+                               IsVisible="{Binding !Monitors.Count}"/>
+                </StackPanel>
+            </ScrollViewer>
+        </DockPanel>
     </Border>
 </Window>

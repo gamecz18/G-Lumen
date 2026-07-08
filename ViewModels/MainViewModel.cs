@@ -25,13 +25,14 @@ namespace G_Lumen.ViewModels
         private SettingsWindow? _settingsWindow;
 
         public MainViewModel(DdcCiService ddc, HdrService hdr, SettingsStore settings,
-            AutostartManager autostart, ILogger logger)
+            AutostartManager autostart, ILogger logger, TrafficLog traffic)
         {
             _ddc = ddc;
             _hdr = hdr;
             _settings = settings;
             _autostart = autostart;
             _log = logger;
+            Traffic = traffic;
 
             _suppressAutostartWrite = true;
             AutostartEnabled = _autostart.IsEnabled;
@@ -42,8 +43,15 @@ namespace G_Lumen.ViewModels
 
         public ObservableCollection<MonitorViewModel> Monitors { get; } = new();
 
+        /// <summary>Živý výpis transakcí s monitory pro diagnostický panel.</summary>
+        public TrafficLog Traffic { get; }
+
         [ObservableProperty]
         private bool _autostartEnabled;
+
+        /// <summary>Zobrazit v popupu panel s low-level provozem (DDC/CI, DisplayConfig).</summary>
+        [ObservableProperty]
+        private bool _showDiagnostics;
 
         [RelayCommand]
         private void Refresh()
@@ -54,11 +62,11 @@ namespace G_Lumen.ViewModels
                 Monitors.Clear();
                 foreach (var info in _ddc.Enumerate())
                     Monitors.Add(new MonitorViewModel(_ddc, _hdr, _settings, info));
-                _log.LogInformation("Refresh: found {Count} monitor(s)", Monitors.Count);
+                _log.LogInformation("Obnova: nalezeno {Count} monitor(ů)", Monitors.Count);
             }
             catch (Exception ex)
             {
-                _log.LogError(ex, "Refresh failed");
+                _log.LogError(ex, "Obnova monitorů selhala");
             }
         }
 
@@ -79,11 +87,30 @@ namespace G_Lumen.ViewModels
                 };
                 _settingsWindow.Closed += (_, _) => _settingsWindow = null;
                 _settingsWindow.Show();
-                _log.LogInformation("Settings opened");
+                _log.LogInformation("Nastavení otevřeno");
             }
             catch (Exception ex)
             {
-                _log.LogError(ex, "OpenSettings failed");
+                _log.LogError(ex, "Otevření nastavení selhalo");
+            }
+        }
+
+        [RelayCommand]
+        private void ClearTraffic() => Traffic.Clear();
+
+        [RelayCommand]
+        private void OpenLogFolder()
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(AppLog.LogDirectory)
+                {
+                    UseShellExecute = true,
+                });
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "Otevření složky s logy selhalo");
             }
         }
 

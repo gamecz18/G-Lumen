@@ -20,12 +20,20 @@ namespace G_Lumen.Services
 
         public static string LogPath { get; private set; } = string.Empty;
 
+        /// <summary>Soubor s provozem na sběrnici (DDC/CI, DisplayConfig) — plní TrafficLog.</summary>
+        public static string TrafficLogPath { get; private set; } = string.Empty;
+
+        /// <summary>Složka se všemi logy (pro tlačítko "otevřít logy" v UI).</summary>
+        public static string LogDirectory { get; private set; } = string.Empty;
+
         public static void Init()
         {
             string dir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                 "G-Lumen", "logs");
+            LogDirectory = dir;
             LogPath = Path.Combine(dir, $"g-lumen-{DateTime.Now:yyyyMMdd}.log");
+            TrafficLogPath = Path.Combine(dir, $"traffic-{DateTime.Now:yyyyMMdd}.log");
 
             Factory = LoggerFactory.Create(builder =>
             {
@@ -33,7 +41,7 @@ namespace G_Lumen.Services
                 builder.AddProvider(new FileLoggerProvider(LogPath));
             });
             _root = Factory.CreateLogger("G-Lumen");
-            _root.LogInformation("=== G-Lumen started (log: {Path}) ===", LogPath);
+            _root.LogInformation("=== G-Lumen spuštěn (log: {Path}) ===", LogPath);
         }
 
         public static ILogger CreateLogger(string category) => Factory.CreateLogger(category);
@@ -41,7 +49,7 @@ namespace G_Lumen.Services
         public static ILogger<T> CreateLogger<T>() => Factory.CreateLogger<T>();
 
         public static void Fatal(string source, Exception ex)
-            => _root.LogCritical(ex, "Unhandled exception from {Source}", source);
+            => _root.LogCritical(ex, "Neošetřená výjimka z {Source}", source);
 
         public static void InstallGlobalHandlers()
         {

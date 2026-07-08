@@ -38,9 +38,13 @@ namespace G_Lumen.ViewModels
             _name = settings.GetName(monitor.StableId) ?? monitor.Description;
             SupportsHdr = _hdr.IsHdrAvailable(monitor.GdiDeviceName);
 
+            bool hdrActiveNow = SupportsHdr && _hdr.IsHdrActive(monitor.GdiDeviceName);
+            HdrStatusText = SupportsHdr
+                ? hdrActiveNow ? "podporováno · právě aktivní" : "podporováno · vypnuto"
+                : "nepodporováno";
+
             // Výchozí režim: uložená volba, jinak podle toho, jestli je HDR právě aktivní.
-            _hdrMode = settings.GetHdrMode(monitor.StableId)
-                       ?? _hdr.IsHdrActive(monitor.GdiDeviceName);
+            _hdrMode = settings.GetHdrMode(monitor.StableId) ?? hdrActiveNow;
 
             _throttle = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
             _throttle.Tick += OnThrottleTick;
@@ -61,14 +65,41 @@ namespace G_Lumen.ViewModels
         [ObservableProperty]
         private bool _hdrMode;
 
+        /// <summary>Rozbalený low-level detail monitoru (ID, handle, API cesty).</summary>
+        [ObservableProperty]
+        private bool _isExpanded;
+
+        /// <summary>Jak dopadlo čtení hodnoty z monitoru při inicializaci.</summary>
+        [ObservableProperty]
+        private string _readInfo = "—";
+
         /// <summary>Monitor podporuje HDR — jen tehdy má smysl přepínač zobrazovat.</summary>
         public bool SupportsHdr { get; }
+
+        /// <summary>Stav HDR při startu ("podporováno · aktivní" apod.).</summary>
+        public string HdrStatusText { get; }
 
         /// <summary>Stabilní ID pro persistenci (klíč do settings).</summary>
         public string StableId => _monitor.StableId;
 
         /// <summary>Původní popis monitoru (placeholder při přejmenování).</summary>
         public string Description => _monitor.Description;
+
+        /// <summary>GDI název displeje (\\.\DISPLAYx).</summary>
+        public string GdiDeviceName => _monitor.GdiDeviceName;
+
+        /// <summary>Handle fyzického monitoru (hex, pro diagnostiku).</summary>
+        public string HandleHex => $"0x{_monitor.HPhysical.ToInt64():X}";
+
+        /// <summary>Krátký popis aktivní cesty pod názvem monitoru.</summary>
+        public string Subtitle => HdrMode
+            ? $"DisplayConfig · SDR white ≈ {HdrService.PercentToNits(Brightness):0} nit"
+            : "DDC/CI · VCP 0x10 (jas)";
+
+        /// <summary>Jaké API se používá pro zápis jasu.</summary>
+        public string WriteInfo => HdrMode
+            ? "DisplayConfigSetDeviceInfo · SDR white level"
+            : "SetVCPFeature · VCP 0x10";
 
         /// <summary>Aktualizuje zobrazený název z nastavení (volá Settings okno po uložení).</summary>
         public void RefreshName()
@@ -79,13 +110,21 @@ namespace G_Lumen.ViewModels
             if (HdrMode)
             {
                 if (_hdr.TryGetSdrNits(_monitor.GdiDeviceName, out double nits))
+                {
+                    ReadInfo = "DisplayConfig · čtení funguje";
                     return HdrService.NitsToPercent(nits);
+                }
+                ReadInfo = "DisplayConfig · čtení selhalo → uložená hodnota";
                 return _settings.GetBrightness(_monitor.StableId) ?? 50;
             }
 
             if (_ddc.TryGetBrightness(_monitor, out uint cur, out uint max) && max > 0)
+            {
+                ReadInfo = "DDC/CI · čtení funguje";
                 return (int)Math.Round(cur * 100.0 / max);
+            }
 
+            ReadInfo = "DDC/CI · čtení selhává → uložená hodnota";
             return _settings.GetBrightness(_monitor.StableId) ?? 50;
         }
 
@@ -98,10 +137,15 @@ namespace G_Lumen.ViewModels
             _suppressWrite = true;
             Brightness = ResolveInitialBrightness();
             _suppressWrite = false;
+
+            OnPropertyChanged(nameof(Subtitle));
+            OnPropertyChanged(nameof(WriteInfo));
         }
 
         partial void OnBrightnessChanged(int value)
         {
+            OnPropertyChanged(nameof(Subtitle));
+
             if (_suppressWrite)
                 return;
 

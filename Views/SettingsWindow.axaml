@@ -3,47 +3,95 @@
         xmlns:vm="using:G_Lumen.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="420" d:DesignHeight="320"
+        mc:Ignorable="d" d:DesignWidth="440" d:DesignHeight="520"
         x:Class="G_Lumen.Views.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
         Title="G-Lumen — Nastavení"
-        Width="420"
-        Height="360"
+        Width="440"
+        Height="520"
+        MinWidth="380"
+        MinHeight="340"
         WindowStartupLocation="CenterScreen"
-        CanResize="False">
+        CanResize="True">
 
-    <DockPanel Margin="16">
-        <TextBlock DockPanel.Dock="Top"
-                   Text="Názvy monitorů"
-                   FontSize="18" FontWeight="Bold"
-                   Margin="0,0,0,4"/>
-        <TextBlock DockPanel.Dock="Top"
-                   Text="Vlastní názvy se zobrazí v popupu místo systémového popisu."
-                   TextWrapping="Wrap"
-                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                   Margin="0,0,0,12"/>
+    <Window.Styles>
+        <Style Selector="TextBlock.glyph">
+            <Setter Property="FontFamily" Value="Segoe Fluent Icons,Segoe MDL2 Assets"/>
+        </Style>
+        <Style Selector="TextBlock.dim">
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+        </Style>
+    </Window.Styles>
 
-        <StackPanel DockPanel.Dock="Bottom"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Right"
-                    Spacing="8"
-                    Margin="0,12,0,0">
-            <Button Content="Zrušit" Command="{Binding CancelCommand}"/>
-            <Button Content="Uložit" Command="{Binding SaveCommand}"
-                    Classes="accent"/>
+    <DockPanel>
+
+        <!-- Hlavička -->
+        <StackPanel DockPanel.Dock="Top" Margin="20,18,20,12">
+            <TextBlock Text="Názvy monitorů" FontSize="18" FontWeight="Bold"/>
+            <TextBlock Classes="dim"
+                       Text="Vlastní názvy se zobrazí v popupu místo systémového popisu."
+                       TextWrapping="Wrap"
+                       FontSize="12"
+                       Margin="0,4,0,0"/>
         </StackPanel>
 
-        <ScrollViewer>
-            <ItemsControl ItemsSource="{Binding Monitors}">
+        <!-- Patička s tlačítky -->
+        <Border DockPanel.Dock="Bottom"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="20,12">
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Spacing="8">
+                <Button Content="Zrušit"
+                        MinWidth="90"
+                        IsCancel="True"
+                        Command="{Binding CancelCommand}"/>
+                <Button Content="Uložit"
+                        MinWidth="90"
+                        Classes="accent"
+                        IsDefault="True"
+                        Command="{Binding SaveCommand}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Karty monitorů -->
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl ItemsSource="{Binding Monitors}" Margin="20,0,20,8">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="vm:MonitorNameEntry">
-                        <StackPanel Margin="0,0,0,12" Spacing="2">
-                            <TextBlock Text="{Binding Description}"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                       FontSize="12"/>
-                            <TextBox Text="{Binding Name, Mode=TwoWay}"
-                                     PlaceholderText="{Binding Description}"/>
-                        </StackPanel>
+                        <Border Margin="0,0,0,10"
+                                Padding="12"
+                                CornerRadius="8"
+                                Background="{DynamicResource SystemControlBackgroundListLowBrush}">
+                            <Grid ColumnDefinitions="Auto,*">
+
+                                <Border Width="38" Height="38"
+                                        CornerRadius="8"
+                                        VerticalAlignment="Top"
+                                        Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+                                    <TextBlock Classes="glyph"
+                                               Text="&#xE7F4;"
+                                               FontSize="17"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                </Border>
+
+                                <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="3">
+                                    <TextBlock Text="{Binding Description}"
+                                               FontSize="12"
+                                               FontWeight="SemiBold"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Classes="dim"
+                                               Text="{Binding Monitor.GdiDeviceName}"
+                                               FontFamily="Cascadia Mono,Consolas"
+                                               FontSize="10"/>
+                                    <TextBox Text="{Binding Name, Mode=TwoWay}"
+                                             Margin="0,3,0,0"
+                                             PlaceholderText="{Binding Description}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
