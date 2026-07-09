@@ -4,8 +4,8 @@ using System.Runtime.InteropServices;
 namespace G_Lumen.Services
 {
     /// <summary>
-    /// P/Invoke definice pro DDC/CI a enumeraci monitorů (Windows-only).
-    /// Převzato z v3 diagnostické utility (DdcCiDiag.NativeMethods), signatury neměněny.
+    /// P/Invoke definitions for DDC/CI and monitor enumeration (Windows-only).
+    /// Taken from the v3 diagnostic utility (DdcCiDiag.NativeMethods), signatures unchanged.
     /// </summary>
     internal static class NativeMethods
     {

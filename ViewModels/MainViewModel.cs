@@ -11,8 +11,8 @@ using Microsoft.Extensions.Logging;
 namespace G_Lumen.ViewModels
 {
     /// <summary>
-    /// Kořenový view-model aplikace. Drží servisní vrstvu, kolekci monitorů
-    /// a příkazy pro tray menu (Obnovit / Nastavení / Autostart / Konec).
+    /// Root view-model of the app. Holds the service layer, the monitor collection,
+    /// and the tray menu commands (Refresh / Settings / Autostart / Exit).
     /// </summary>
     public partial class MainViewModel : ViewModelBase
     {
@@ -43,13 +43,13 @@ namespace G_Lumen.ViewModels
 
         public ObservableCollection<MonitorViewModel> Monitors { get; } = new();
 
-        /// <summary>Živý výpis transakcí s monitory pro diagnostický panel.</summary>
+        /// <summary>Live feed of monitor transactions for the diagnostics panel.</summary>
         public TrafficLog Traffic { get; }
 
         [ObservableProperty]
         private bool _autostartEnabled;
 
-        /// <summary>Zobrazit v popupu panel s low-level provozem (DDC/CI, DisplayConfig).</summary>
+        /// <summary>Show the low-level traffic panel (DDC/CI, DisplayConfig) in the popup.</summary>
         [ObservableProperty]
         private bool _showDiagnostics;
 
@@ -62,11 +62,11 @@ namespace G_Lumen.ViewModels
                 Monitors.Clear();
                 foreach (var info in _ddc.Enumerate())
                     Monitors.Add(new MonitorViewModel(_ddc, _hdr, _settings, info));
-                _log.LogInformation("Obnova: nalezeno {Count} monitor(ů)", Monitors.Count);
+                _log.LogInformation("Refresh: found {Count} monitor(s)", Monitors.Count);
             }
             catch (Exception ex)
             {
-                _log.LogError(ex, "Obnova monitorů selhala");
+                _log.LogError(ex, "Monitor refresh failed");
             }
         }
 
@@ -87,11 +87,11 @@ namespace G_Lumen.ViewModels
                 };
                 _settingsWindow.Closed += (_, _) => _settingsWindow = null;
                 _settingsWindow.Show();
-                _log.LogInformation("Nastavení otevřeno");
+                _log.LogInformation("Settings opened");
             }
             catch (Exception ex)
             {
-                _log.LogError(ex, "Otevření nastavení selhalo");
+                _log.LogError(ex, "Opening settings failed");
             }
         }
 
@@ -110,7 +110,7 @@ namespace G_Lumen.ViewModels
             }
             catch (Exception ex)
             {
-                _log.LogError(ex, "Otevření složky s logy selhalo");
+                _log.LogError(ex, "Opening the log folder failed");
             }
         }
 

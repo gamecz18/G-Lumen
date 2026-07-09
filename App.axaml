@@ -18,16 +18,16 @@
                       Clicked="OnTrayClicked">
                 <TrayIcon.Menu>
                     <NativeMenu>
-                        <NativeMenuItem Header="Obnovit monitory"
+                        <NativeMenuItem Header="Refresh monitors"
                                         Command="{Binding RefreshCommand}"/>
-                        <NativeMenuItem Header="Nastavení…"
+                        <NativeMenuItem Header="Settings…"
                                         Command="{Binding OpenSettingsCommand}"/>
                         <NativeMenuItemSeparator/>
-                        <NativeMenuItem Header="Spouštět při startu"
+                        <NativeMenuItem Header="Start with Windows"
                                         ToggleType="CheckBox"
                                         IsChecked="{Binding AutostartEnabled, Mode=TwoWay}"/>
                         <NativeMenuItemSeparator/>
-                        <NativeMenuItem Header="Konec"
+                        <NativeMenuItem Header="Exit"
                                         Command="{Binding ExitCommand}"/>
                     </NativeMenu>
                 </TrayIcon.Menu>

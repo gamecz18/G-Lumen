@@ -8,7 +8,7 @@ using G_Lumen.Services;
 namespace G_Lumen.ViewModels
 {
     /// <summary>
-    /// View-model okna Nastavení. Zatím editace vlastních názvů monitorů.
+    /// View-model for the Settings window. Currently just editing custom monitor names.
     /// </summary>
     public partial class SettingsViewModel : ViewModelBase
     {
@@ -23,7 +23,7 @@ namespace G_Lumen.ViewModels
 
         public ObservableCollection<MonitorNameEntry> Monitors { get; } = new();
 
-        /// <summary>Vyvolá zavření okna (napojeno v code-behind).</summary>
+        /// <summary>Raised to close the window (wired up in code-behind).</summary>
         public event Action? RequestClose;
 
         [RelayCommand]
@@ -42,7 +42,7 @@ namespace G_Lumen.ViewModels
         private void Cancel() => RequestClose?.Invoke();
     }
 
-    /// <summary>Jeden řádek v Nastavení: editovatelný název monitoru.</summary>
+    /// <summary>One row in Settings: an editable monitor name.</summary>
     public partial class MonitorNameEntry : ViewModelBase
     {
         public MonitorNameEntry(MonitorViewModel monitor)

@@ -6,7 +6,7 @@
         mc:Ignorable="d" d:DesignWidth="440" d:DesignHeight="520"
         x:Class="G_Lumen.Views.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
-        Title="G-Lumen — Nastavení"
+        Title="G-Lumen — Settings"
         Width="440"
         Height="520"
         MinWidth="380"
@@ -25,17 +25,17 @@
 
     <DockPanel>
 
-        <!-- Hlavička -->
+        <!-- Header -->
         <StackPanel DockPanel.Dock="Top" Margin="20,18,20,12">
-            <TextBlock Text="Názvy monitorů" FontSize="18" FontWeight="Bold"/>
+            <TextBlock Text="Monitor names" FontSize="18" FontWeight="Bold"/>
             <TextBlock Classes="dim"
-                       Text="Vlastní názvy se zobrazí v popupu místo systémového popisu."
+                       Text="Custom names are shown in the popup instead of the system description."
                        TextWrapping="Wrap"
                        FontSize="12"
                        Margin="0,4,0,0"/>
         </StackPanel>
 
-        <!-- Patička s tlačítky -->
+        <!-- Button footer -->
         <Border DockPanel.Dock="Bottom"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                 BorderThickness="0,1,0,0"
@@ -43,11 +43,11 @@
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Right"
                         Spacing="8">
-                <Button Content="Zrušit"
+                <Button Content="Cancel"
                         MinWidth="90"
                         IsCancel="True"
                         Command="{Binding CancelCommand}"/>
-                <Button Content="Uložit"
+                <Button Content="Save"
                         MinWidth="90"
                         Classes="accent"
                         IsDefault="True"
@@ -55,7 +55,7 @@
             </StackPanel>
         </Border>
 
-        <!-- Karty monitorů -->
+        <!-- Monitor cards -->
         <ScrollViewer HorizontalScrollBarVisibility="Disabled">
             <ItemsControl ItemsSource="{Binding Monitors}" Margin="20,0,20,8">
                 <ItemsControl.ItemTemplate>

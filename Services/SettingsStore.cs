@@ -7,9 +7,10 @@ using System.Text.Json;
 namespace G_Lumen.Services
 {
     /// <summary>
-    /// Perzistence posledních zapsaných hodnot jasu per monitor do
-    /// %AppData%\G-Lumen\settings.json. Protože čtení z monitoru na tomto HW
-    /// nefunguje, je tohle hlavní zdroj pravdy o tom, co slider má ukazovat.
+    /// Persists the last-written brightness values per monitor to
+    /// %AppData%\G-Lumen\settings.json. Since reading from the monitor doesn't
+    /// work on this hardware, this is the main source of truth for what the
+    /// slider should show.
     /// </summary>
     public sealed class SettingsStore
     {
@@ -55,14 +56,14 @@ namespace G_Lumen.Services
             }
         }
 
-        /// <summary>Poslední uložený jas (0–100), nebo null pokud monitor neznáme.</summary>
+        /// <summary>Last saved brightness (0–100), or null if the monitor is unknown.</summary>
         public int? GetBrightness(string stableId)
             => _data.Brightness.TryGetValue(stableId, out int v) ? v : null;
 
         public void SetBrightness(string stableId, int value)
             => _data.Brightness[stableId] = value;
 
-        /// <summary>Vlastní název monitoru, nebo null pokud nebyl nastaven.</summary>
+        /// <summary>Custom monitor name, or null if none was set.</summary>
         public string? GetName(string stableId)
             => _data.Names.TryGetValue(stableId, out string? v) && !string.IsNullOrWhiteSpace(v) ? v : null;
 
@@ -74,7 +75,7 @@ namespace G_Lumen.Services
                 _data.Names[stableId] = name.Trim();
         }
 
-        /// <summary>Je pro monitor zapnut HDR režim (slider ovládá SDR white level)?</summary>
+        /// <summary>Is HDR mode enabled for the monitor (slider controls SDR white level)?</summary>
         public bool? GetHdrMode(string stableId)
             => _data.HdrMode.TryGetValue(stableId, out bool v) ? v : null;
 

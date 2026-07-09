@@ -3,27 +3,27 @@ using System;
 namespace G_Lumen.Services
 {
     /// <summary>
-    /// Reprezentuje jeden fyzický monitor, na který umíme posílat DDC/CI příkazy.
-    /// Handle drží <see cref="DdcCiService"/> naživu po dobu běhu aplikace
-    /// (uvolní se až v <see cref="DdcCiService.Dispose"/>).
+    /// Represents one physical monitor that we can send DDC/CI commands to.
+    /// The handle is kept alive by <see cref="DdcCiService"/> for the app's lifetime
+    /// (released only in <see cref="DdcCiService.Dispose"/>).
     /// </summary>
     public sealed class MonitorInfo
     {
-        /// <summary>Handle fyzického monitoru z GetPhysicalMonitorsFromHMONITOR.</summary>
+        /// <summary>Physical monitor handle from GetPhysicalMonitorsFromHMONITOR.</summary>
         public IntPtr HPhysical { get; init; }
 
         /// <summary>
-        /// Stabilní identifikátor pro persistenci (z EnumDisplayDevices DeviceID + index).
-        /// Přežije restart appky a slouží jako klíč do settings.json.
+        /// Stable identifier for persistence (from EnumDisplayDevices DeviceID + index).
+        /// Survives app restarts and is used as the key into settings.json.
         /// </summary>
         public string StableId { get; init; } = string.Empty;
 
-        /// <summary>Lidsky čitelný popis (např. "Generic PnP Monitor").</summary>
+        /// <summary>Human-readable description (e.g. "Generic PnP Monitor").</summary>
         public string Description { get; init; } = string.Empty;
 
         /// <summary>
-        /// GDI název displeje (\\.\DISPLAYx) z MONITORINFOEX — bridge na
-        /// DisplayConfig API pro HDR / SDR white level.
+        /// GDI display name (\\.\DISPLAYx) from MONITORINFOEX — bridges to the
+        /// DisplayConfig API for HDR / SDR white level.
         /// </summary>
         public string GdiDeviceName { get; init; } = string.Empty;
     }

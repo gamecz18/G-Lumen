@@ -6,7 +6,7 @@ using Microsoft.Win32;
 namespace G_Lumen.Services
 {
     /// <summary>
-    /// Spouštění při přihlášení do Windows přes HKCU Run klíč (bez admin práv).
+    /// Launch on Windows sign-in via the HKCU Run key (no admin rights needed).
     /// </summary>
     [SupportedOSPlatform("windows")]
     public sealed class AutostartManager
@@ -14,7 +14,7 @@ namespace G_Lumen.Services
         private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
         private const string ValueName = "G-Lumen";
 
-        /// <summary>Je v registru zapsán spustitelný soubor pro autostart?</summary>
+        /// <summary>Is the executable path registered for autostart?</summary>
         public bool IsEnabled
         {
             get

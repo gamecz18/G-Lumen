@@ -6,23 +6,24 @@ using static G_Lumen.Services.DisplayConfigNative;
 namespace G_Lumen.Services
 {
     /// <summary>
-    /// Ovládání jasu na HDR monitorech přes "SDR white level" (DisplayConfig API).
-    /// Když je monitor v HDR, DDC 0x10 typicky neovládá reálný jas — místo toho
-    /// se mění SDR white level (to, co dělá ve Windows posuvník "Jas obsahu SDR").
+    /// Controls brightness on HDR monitors via "SDR white level" (DisplayConfig API).
+    /// When a monitor is in HDR, DDC 0x10 typically doesn't control real brightness —
+    /// instead the SDR white level changes (what Windows' "SDR content brightness"
+    /// slider does).
     ///
-    /// Narozdíl od DDC je ČTENÍ přes DisplayConfig dokumentované a funguje,
-    /// takže slider umí v HDR režimu ukázat skutečnou hodnotu.
+    /// Unlike DDC, READING via DisplayConfig is documented and works, so the slider
+    /// can show the actual value in HDR mode.
     /// </summary>
     public sealed class HdrService
     {
-        /// <summary>Rozsah jasu v nitech namapovaný na slider 0–100 %.</summary>
+        /// <summary>Brightness range in nits, mapped to the 0–100% slider.</summary>
         public const double MinNits = 80.0;
         public const double MaxNits = 480.0;
 
         private readonly ILogger _log;
         private readonly TrafficLog _traffic;
 
-        // GDI device name (\\.\DISPLAYx, upper) → cíl pro DisplayConfig dotazy.
+        // GDI device name (\\.\DISPLAYx, upper) → target for DisplayConfig queries.
         private readonly Dictionary<string, (LUID adapterId, uint targetId)> _targets =
             new(StringComparer.OrdinalIgnoreCase);
 
@@ -32,7 +33,7 @@ namespace G_Lumen.Services
             _traffic = traffic;
         }
 
-        /// <summary>Znovu načte aktivní DisplayConfig cesty a namapuje GDI názvy na cíle.</summary>
+        /// <summary>Reloads active DisplayConfig paths and maps GDI names to targets.</summary>
         public void RefreshPaths()
         {
             _targets.Clear();
@@ -46,12 +47,12 @@ namespace G_Lumen.Services
                 int qrc = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, ref pathCount, paths, ref modeCount, modes, IntPtr.Zero);
                 if (qrc != ERROR_SUCCESS)
                 {
-                    _traffic.In("DispCfg", "QueryDisplayConfig selhalo", false, qrc);
-                    _log.LogWarning("QueryDisplayConfig selhalo rc={Rc}", qrc);
+                    _traffic.In("DispCfg", "QueryDisplayConfig failed", false, qrc);
+                    _log.LogWarning("QueryDisplayConfig failed rc={Rc}", qrc);
                     return;
                 }
 
-                _traffic.In("DispCfg", $"QueryDisplayConfig → {pathCount} aktivních cest", true);
+                _traffic.In("DispCfg", $"QueryDisplayConfig → {pathCount} active path(s)", true);
 
                 for (int i = 0; i < pathCount; i++)
                 {
@@ -78,26 +79,26 @@ namespace G_Lumen.Services
             }
             catch (Exception ex)
             {
-                _log.LogWarning(ex, "Načtení DisplayConfig cest selhalo");
+                _log.LogWarning(ex, "Loading DisplayConfig paths failed");
             }
         }
 
         /// <summary>
-        /// Je to reálný displej s DisplayConfig cestou (a tedy kandidát na HDR/SDR
-        /// white level)? Nezávisí na čtení HDR stavu, které na některých ovladačích
-        /// (AMD + levný adaptér) selhává stejně jako DDC read-back.
+        /// Is this a real display with a DisplayConfig path (and therefore a candidate
+        /// for HDR/SDR white level)? Doesn't depend on reading the HDR state, which
+        /// fails on some drivers (AMD + cheap adapter) just like the DDC read-back.
         /// </summary>
         public bool HasTarget(string gdiDeviceName) => _targets.ContainsKey(gdiDeviceName);
 
-        /// <summary>Podporuje monitor pokročilé barvy (HDR), ať už je teď zapnuté nebo ne?</summary>
+        /// <summary>Does the monitor support advanced color (HDR), whether it's currently on or not?</summary>
         public bool IsHdrAvailable(string gdiDeviceName)
             => TryGetAdvancedColor(gdiDeviceName, out var info) && info.AdvancedColorSupported;
 
-        /// <summary>Je na monitoru právě teď zapnuté HDR?</summary>
+        /// <summary>Is HDR currently enabled on the monitor?</summary>
         public bool IsHdrActive(string gdiDeviceName)
             => TryGetAdvancedColor(gdiDeviceName, out var info) && info.AdvancedColorEnabled;
 
-        /// <summary>Přečte aktuální SDR white level v nitech.</summary>
+        /// <summary>Reads the current SDR white level in nits.</summary>
         public bool TryGetSdrNits(string gdiDeviceName, out double nits)
         {
             nits = MinNits;
@@ -120,17 +121,17 @@ namespace G_Lumen.Services
 
                 nits = packet.SDRWhiteLevel * 80.0 / 1000.0;
                 _traffic.In("DispCfg",
-                    $"GetSdrWhiteLevel = {nits:0} nit (raw {packet.SDRWhiteLevel}) · {gdiDeviceName}", true);
+                    $"GetSdrWhiteLevel = {nits:0} nits (raw {packet.SDRWhiteLevel}) · {gdiDeviceName}", true);
                 return true;
             }
             catch (Exception ex)
             {
-                _log.LogWarning(ex, "Čtení SDR white level selhalo");
+                _log.LogWarning(ex, "Reading SDR white level failed");
                 return false;
             }
         }
 
-        /// <summary>Nastaví SDR white level v nitech (nedokumentované API).</summary>
+        /// <summary>Sets the SDR white level in nits (undocumented API).</summary>
         public bool SetSdrNits(string gdiDeviceName, double nits)
         {
             if (!_targets.TryGetValue(gdiDeviceName, out var t))
@@ -149,27 +150,27 @@ namespace G_Lumen.Services
                 int rc = DisplayConfigSetDeviceInfo(ref packet);
 
                 _traffic.Out("DispCfg",
-                    $"SetSdrWhiteLevel = {nits:0} nit (raw {packet.SDRWhiteLevel}) · {gdiDeviceName}",
+                    $"SetSdrWhiteLevel = {nits:0} nits (raw {packet.SDRWhiteLevel}) · {gdiDeviceName}",
                     rc == ERROR_SUCCESS, rc == ERROR_SUCCESS ? null : rc);
 
                 if (rc != ERROR_SUCCESS)
-                    _log.LogWarning("Zápis SDR white level selhal rc={Rc} ({Gdi})", rc, gdiDeviceName);
+                    _log.LogWarning("SDR white level write failed rc={Rc} ({Gdi})", rc, gdiDeviceName);
                 else
-                    _log.LogDebug("SDR white level {Nits} nit -> {Gdi}", nits, gdiDeviceName);
+                    _log.LogDebug("SDR white level {Nits} nits -> {Gdi}", nits, gdiDeviceName);
                 return rc == ERROR_SUCCESS;
             }
             catch (Exception ex)
             {
-                _log.LogWarning(ex, "Zápis SDR white level selhal (výjimka)");
+                _log.LogWarning(ex, "SDR white level write failed (exception)");
                 return false;
             }
         }
 
-        /// <summary>Převede procenta slideru (0–100) na nity v rozsahu Min–Max.</summary>
+        /// <summary>Converts a slider percentage (0–100) to nits within the Min–Max range.</summary>
         public static double PercentToNits(int percent)
             => MinNits + Math.Clamp(percent, 0, 100) / 100.0 * (MaxNits - MinNits);
 
-        /// <summary>Převede nity zpět na procenta slideru (0–100).</summary>
+        /// <summary>Converts nits back to a slider percentage (0–100).</summary>
         public static int NitsToPercent(double nits)
             => (int)Math.Round(Math.Clamp((nits - MinNits) / (MaxNits - MinNits), 0.0, 1.0) * 100);
 
@@ -190,7 +191,7 @@ namespace G_Lumen.Services
                 if (rc == ERROR_SUCCESS)
                 {
                     _traffic.In("DispCfg",
-                        $"GetAdvancedColorInfo · {gdiDeviceName}: HDR podpora={(info.AdvancedColorSupported ? "ano" : "ne")}, aktivní={(info.AdvancedColorEnabled ? "ano" : "ne")}",
+                        $"GetAdvancedColorInfo · {gdiDeviceName}: HDR supported={(info.AdvancedColorSupported ? "yes" : "no")}, active={(info.AdvancedColorEnabled ? "yes" : "no")}",
                         true);
                     _log.LogDebug("HDR {Gdi}: supported={Sup} enabled={En}",
                         gdiDeviceName, info.AdvancedColorSupported, info.AdvancedColorEnabled);
@@ -203,7 +204,7 @@ namespace G_Lumen.Services
             }
             catch (Exception ex)
             {
-                _log.LogDebug(ex, "Čtení HDR stavu selhalo (výjimka)");
+                _log.LogDebug(ex, "Reading HDR state failed (exception)");
                 return false;
             }
         }

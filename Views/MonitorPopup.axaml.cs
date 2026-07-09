@@ -6,8 +6,8 @@ using Avalonia.Input;
 namespace G_Lumen.Views
 {
     /// <summary>
-    /// Borderless popup s posuvníky jasu. Otevírá se z tray ikony, zavírá se
-    /// (skrývá, nezavírá) při ztrátě fokusu, aby šel znovu rychle ukázat.
+    /// Borderless popup with brightness sliders. Opens from the tray icon, closes
+    /// (hides, doesn't destroy) on focus loss, so it can be shown again quickly.
     /// </summary>
     public partial class MonitorPopup : Window
     {
@@ -17,8 +17,8 @@ namespace G_Lumen.Views
             WindowStartupLocation = WindowStartupLocation.Manual;
             Deactivated += (_, _) => Hide();
 
-            // SizeToContent: rozbalení diagnostiky / detailu monitoru změní výšku
-            // → okno se musí znovu přilepit k liště.
+            // SizeToContent: expanding diagnostics / monitor detail changes the height
+            // → the window has to re-snap to the tray corner.
             SizeChanged += (_, _) =>
             {
                 if (IsVisible)
@@ -26,7 +26,7 @@ namespace G_Lumen.Views
             };
         }
 
-        /// <summary>Zobrazí popup vpravo dole u systémové lišty.</summary>
+        /// <summary>Shows the popup at the bottom-right, near the system tray.</summary>
         public void ShowAtTray()
         {
             if (!IsVisible)
@@ -39,13 +39,13 @@ namespace G_Lumen.Views
         protected override void OnOpened(EventArgs e)
         {
             base.OnOpened(e);
-            // Po prvním layoutu známe skutečnou výšku (SizeToContent) → přepočítej pozici.
+            // The real height (SizeToContent) is only known after the first layout pass → recompute position.
             PositionBottomRight();
         }
 
         /// <summary>
-        /// Tažení úchytu nad diagnostickým logem: mění výšku výpisu.
-        /// Okno je ukotvené dole, takže růst logu vizuálně roztahuje popup nahoru.
+        /// Dragging the handle above the diagnostics log: resizes the log.
+        /// The window is anchored at the bottom, so a growing log visually pushes the popup upward.
         /// </summary>
         private void OnLogResizeDragDelta(object? sender, VectorEventArgs e)
         {
@@ -62,10 +62,10 @@ namespace G_Lumen.Views
             if (screen is null)
                 return;
 
-            var area = screen.WorkingArea; // v pixelech, bez taskbaru
+            var area = screen.WorkingArea; // in pixels, excludes the taskbar
             double scale = screen.Scaling;
 
-            // Popup nesmí přerůst pracovní plochu (jinak by se obsah ořezával).
+            // The popup must not outgrow the work area (otherwise content would be clipped).
             MaxHeight = Math.Max(300, area.Height / scale - 16);
 
             int width = (int)Math.Round(Math.Max(ClientSize.Width, Width) * scale);

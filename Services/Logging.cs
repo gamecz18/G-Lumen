@@ -7,9 +7,9 @@ using Microsoft.Extensions.Logging;
 namespace G_Lumen.Services
 {
     /// <summary>
-    /// Globální bootstrap logování. Zapisuje do souboru
-    /// %AppData%\G-Lumen\logs\g-lumen-YYYYMMDD.log a registruje
-    /// zachytávače neošetřených výjimek, aby pády byly dohledatelné.
+    /// Global bootstrap logging. Writes to
+    /// %AppData%\G-Lumen\logs\g-lumen-YYYYMMDD.log and registers
+    /// handlers for unhandled exceptions so crashes are traceable.
     /// </summary>
     public static class AppLog
     {
@@ -20,10 +20,10 @@ namespace G_Lumen.Services
 
         public static string LogPath { get; private set; } = string.Empty;
 
-        /// <summary>Soubor s provozem na sběrnici (DDC/CI, DisplayConfig) — plní TrafficLog.</summary>
+        /// <summary>File with bus traffic (DDC/CI, DisplayConfig) — fed by TrafficLog.</summary>
         public static string TrafficLogPath { get; private set; } = string.Empty;
 
-        /// <summary>Složka se všemi logy (pro tlačítko "otevřít logy" v UI).</summary>
+        /// <summary>Folder containing all logs (for the "open logs" button in the UI).</summary>
         public static string LogDirectory { get; private set; } = string.Empty;
 
         public static void Init()
@@ -41,7 +41,7 @@ namespace G_Lumen.Services
                 builder.AddProvider(new FileLoggerProvider(LogPath));
             });
             _root = Factory.CreateLogger("G-Lumen");
-            _root.LogInformation("=== G-Lumen spuštěn (log: {Path}) ===", LogPath);
+            _root.LogInformation("=== G-Lumen started (log: {Path}) ===", LogPath);
         }
 
         public static ILogger CreateLogger(string category) => Factory.CreateLogger(category);
@@ -49,7 +49,7 @@ namespace G_Lumen.Services
         public static ILogger<T> CreateLogger<T>() => Factory.CreateLogger<T>();
 
         public static void Fatal(string source, Exception ex)
-            => _root.LogCritical(ex, "Neošetřená výjimka z {Source}", source);
+            => _root.LogCritical(ex, "Unhandled exception from {Source}", source);
 
         public static void InstallGlobalHandlers()
         {
@@ -66,7 +66,7 @@ namespace G_Lumen.Services
         }
     }
 
-    /// <summary>Jednoduchý souborový <see cref="ILoggerProvider"/> (thread-safe append).</summary>
+    /// <summary>Simple file-based <see cref="ILoggerProvider"/> (thread-safe append).</summary>
     public sealed class FileLoggerProvider : ILoggerProvider
     {
         private readonly string _path;
@@ -91,7 +91,7 @@ namespace G_Lumen.Services
             }
             catch
             {
-                // Logování nikdy nesmí shodit appku.
+                // Logging must never crash the app.
             }
         }
     }

@@ -29,7 +29,7 @@ namespace G_Lumen
             {
                 if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
                 {
-                    // Tray aplikace: žádné okno na startu, běží dokud uživatel nezvolí Konec.
+                    // Tray app: no window at startup, runs until the user chooses Exit.
                     desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
                     var settings = new SettingsStore();
@@ -45,12 +45,12 @@ namespace G_Lumen
                         AppLog.CreateLogger<MainViewModel>(),
                         traffic);
 
-                    // DataContext aplikace = zdroj pro bindingy tray menu (NativeMenu).
+                    // App DataContext = source for tray menu (NativeMenu) bindings.
                     DataContext = _mainViewModel;
 
                     desktop.Exit += (_, _) => _ddc?.Dispose();
 
-                    // Volitelné automatické otevření popupu po startu (diagnostika): GLUMEN_AUTOSHOW=1.
+                    // Optional auto-open of the popup at startup (diagnostics): GLUMEN_AUTOSHOW=1.
                     if (Environment.GetEnvironmentVariable("GLUMEN_AUTOSHOW") == "1")
                         Dispatcher.UIThread.Post(TogglePopup, DispatcherPriority.Background);
                 }
@@ -60,7 +60,7 @@ namespace G_Lumen
             catch (Exception ex)
             {
 
-                _log.LogCritical(ex, "Inicializace aplikace selhala");
+                _log.LogCritical(ex, "Application initialization failed");
                 throw;
             }
         }
@@ -83,7 +83,7 @@ namespace G_Lumen
             }
             catch (Exception ex)
             {
-                _log.LogError(ex, "Zobrazení popupu selhalo");
+                _log.LogError(ex, "Showing the popup failed");
             }
         }
     }

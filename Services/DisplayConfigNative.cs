@@ -4,12 +4,12 @@ using System.Runtime.InteropServices;
 namespace G_Lumen.Services
 {
     /// <summary>
-    /// P/Invoke pro Windows DisplayConfig API — detekce HDR a čtení/zápis
-    /// "SDR white level" (jas obsahu SDR na HDR monitoru).
+    /// P/Invoke for the Windows DisplayConfig API — HDR detection and reading/writing
+    /// the "SDR white level" (SDR content brightness on an HDR monitor).
     ///
-    /// Pozn.: zápis SDR white level je NEDOKUMENTOVANÉ API
+    /// Note: writing the SDR white level is an UNDOCUMENTED API
     /// (DISPLAYCONFIG_DEVICE_INFO_SET_SDR_WHITE_LEVEL = 0xFFFFFFEE).
-    /// Struktura i škálování převzaty z ledoge/set_maxtml.
+    /// Struct layout and scaling taken from ledoge/set_maxtml.
     /// </summary>
     internal static class DisplayConfigNative
     {
@@ -37,8 +37,8 @@ namespace G_Lumen.Services
             public LUID adapterId;
             public uint id;
             public uint modeInfoIdx;
-            public uint statusFlags; // POZOR: bez tohoto pole je struktura o 4 B menší
-                                     // → QueryDisplayConfig přepisuje paměť (heap corruption).
+            public uint statusFlags; // CAUTION: without this field the struct is 4 bytes smaller
+                                     // → QueryDisplayConfig overwrites memory (heap corruption).
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -71,10 +71,11 @@ namespace G_Lumen.Services
             public uint flags;
         }
 
-        // DISPLAYCONFIG_MODE_INFO je union (target/source/desktop image), 64 B.
-        // Obsah nepotřebujeme číst, jen rezervujeme přesně 48 B union pomocí
-        // konkrétních polí (6× ulong) — jinak by marshaller mohl velikost spočítat
-        // špatně a QueryDisplayConfig by zapisoval za hranice pole (heap corruption).
+        // DISPLAYCONFIG_MODE_INFO is a union (target/source/desktop image), 64 bytes.
+        // We don't need to read its contents, just reserve the exact 48-byte union
+        // using explicit fields (6x ulong) — otherwise the marshaller could get the
+        // size wrong and QueryDisplayConfig would write past the array bounds
+        // (heap corruption).
         [StructLayout(LayoutKind.Sequential)]
         public struct DISPLAYCONFIG_MODE_INFO
         {
@@ -124,7 +125,7 @@ namespace G_Lumen.Services
         public struct DISPLAYCONFIG_SDR_WHITE_LEVEL
         {
             public DISPLAYCONFIG_DEVICE_INFO_HEADER header;
-            public uint SDRWhiteLevel; // 1000 == 80 nitů
+            public uint SDRWhiteLevel; // 1000 == 80 nits
         }
 
         [StructLayout(LayoutKind.Sequential)]

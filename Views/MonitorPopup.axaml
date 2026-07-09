@@ -47,40 +47,40 @@
             Padding="0,0,0,8">
         <DockPanel>
 
-            <!-- Hlavička -->
+            <!-- Header -->
             <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto,Auto" Margin="14,10,8,6">
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock Text="G-Lumen" FontWeight="Bold" FontSize="14"/>
-                    <TextBlock Classes="dim" Text="Jas monitorů" FontSize="10"/>
+                    <TextBlock Classes="dim" Text="Monitor brightness" FontSize="10"/>
                 </StackPanel>
 
                 <ToggleButton Grid.Column="1" Classes="icon"
                               IsChecked="{Binding ShowDiagnostics, Mode=TwoWay}"
-                              ToolTip.Tip="Diagnostika — provoz DDC/CI a DisplayConfig">
+                              ToolTip.Tip="Diagnostics — DDC/CI and DisplayConfig traffic">
                     <TextBlock Classes="glyph" Text="&#xE9D9;"/>
                 </ToggleButton>
 
                 <Button Grid.Column="2" Classes="icon"
                         Command="{Binding RefreshCommand}"
-                        ToolTip.Tip="Znovu najít monitory">
+                        ToolTip.Tip="Refresh monitors">
                     <TextBlock Classes="glyph" Text="&#xE72C;"/>
                 </Button>
 
                 <Button Grid.Column="3" Classes="icon"
                         Command="{Binding OpenSettingsCommand}"
-                        ToolTip.Tip="Nastavení">
+                        ToolTip.Tip="Settings">
                     <TextBlock Classes="glyph" Text="&#xE713;"/>
                 </Button>
             </Grid>
 
-            <!-- Diagnostika: co jde do monitorů a co se vrací.
-                 Dokovaná dole → při přetečení okna scrollují monitory, log zůstává celý. -->
+            <!-- Diagnostics: what goes to the monitors and what comes back.
+                 Docked at the bottom → monitors scroll on overflow, the log stays whole. -->
             <StackPanel DockPanel.Dock="Bottom" IsVisible="{Binding ShowDiagnostics}">
 
-                <!-- Úchyt: tažením nahoru/dolů se mění výška logu -->
+                <!-- Handle: drag up/down to resize the log -->
                 <Thumb Height="12" Cursor="SizeNorthSouth"
                        DragDelta="OnLogResizeDragDelta"
-                       ToolTip.Tip="Tažením změníte výšku výpisu">
+                       ToolTip.Tip="Drag to resize the log">
                     <Thumb.Template>
                         <ControlTemplate>
                             <Border Background="Transparent">
@@ -94,25 +94,25 @@
 
                 <Grid ColumnDefinitions="*,Auto,Auto" Margin="14,0,8,2">
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Provoz na sběrnici" FontWeight="SemiBold" FontSize="12"/>
+                        <TextBlock Text="Bus traffic" FontWeight="SemiBold" FontSize="12"/>
                         <TextBlock Classes="dim" FontSize="10"
-                                   Text="→ zápis do monitoru · ← čtení / odpověď"/>
+                                   Text="→ write to monitor · ← read / response"/>
                     </StackPanel>
 
                     <Button Grid.Column="1" Classes="icon"
                             Command="{Binding ClearTrafficCommand}"
-                            ToolTip.Tip="Vymazat výpis">
+                            ToolTip.Tip="Clear log">
                         <TextBlock Classes="glyph" Text="&#xE74D;" FontSize="13"/>
                     </Button>
 
                     <Button Grid.Column="2" Classes="icon"
                             Command="{Binding OpenLogFolderCommand}"
-                            ToolTip.Tip="Otevřít složku s logy (g-lumen-*.log, traffic-*.log)">
+                            ToolTip.Tip="Open log folder (g-lumen-*.log, traffic-*.log)">
                         <TextBlock Classes="glyph" Text="&#xE838;" FontSize="13"/>
                     </Button>
                 </Grid>
 
-                <!-- Vodorovný posuvník dole: dlouhé řádky se neořezávají, jdou doscrollovat -->
+                <!-- Horizontal scrollbar at the bottom: long lines aren't truncated, can be scrolled -->
                 <ScrollViewer x:Name="LogScroll" Height="200" Margin="8,4,8,0"
                               HorizontalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding Traffic.Entries}">
@@ -157,7 +157,7 @@
                 </ScrollViewer>
             </StackPanel>
 
-            <!-- Monitory (vyplní zbytek; při přetečení scrollují) -->
+            <!-- Monitors (fill the rest; scroll on overflow) -->
             <ScrollViewer HorizontalScrollBarVisibility="Disabled">
                 <StackPanel>
                     <ItemsControl ItemsSource="{Binding Monitors}">
@@ -168,7 +168,7 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                    <TextBlock Text="Žádné monitory s DDC/CI nenalezeny."
+                    <TextBlock Text="No DDC/CI monitors found."
                                Margin="14,8"
                                TextWrapping="Wrap"
                                Classes="dim"

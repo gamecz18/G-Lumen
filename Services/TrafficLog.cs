@@ -7,54 +7,54 @@ using Avalonia.Threading;
 namespace G_Lumen.Services
 {
     /// <summary>
-    /// Jedna transakce směrem k monitoru (→) nebo od něj (←).
-    /// Zobrazuje se v diagnostickém panelu popupu.
+    /// One transaction toward the monitor (→) or from it (←).
+    /// Shown in the popup's diagnostics panel.
     /// </summary>
     public sealed class TrafficEntry
     {
         public DateTime Time { get; init; }
 
-        /// <summary>true = zápis do monitoru (→), false = čtení / odpověď (←).</summary>
+        /// <summary>true = write to the monitor (→), false = read / response (←).</summary>
         public bool Outgoing { get; init; }
 
-        /// <summary>Kanál: "DDC/CI", "DispCfg" (DisplayConfig), "GDI" (enumerace).</summary>
+        /// <summary>Channel: "DDC/CI", "DispCfg" (DisplayConfig), "GDI" (enumeration).</summary>
         public string Channel { get; init; } = string.Empty;
 
         public string Message { get; init; } = string.Empty;
 
         public bool Success { get; init; }
 
-        /// <summary>Win32 / DisplayConfig chybový kód, pokud operace selhala.</summary>
+        /// <summary>Win32 / DisplayConfig error code, if the operation failed.</summary>
         public int? Error { get; init; }
 
         public string TimeText => Time.ToString("HH:mm:ss.fff");
         public string Arrow => Outgoing ? "→" : "←";
         public string StatusText => Success ? "OK" : Error is int e ? $"ERR {e}" : "ERR";
 
-        /// <summary>Tooltip řádku: celá zpráva + lidské vysvětlení chybového kódu.</summary>
+        /// <summary>Row tooltip: full message + a human-readable explanation of the error code.</summary>
         public string Tooltip => Success
             ? Message
             : $"{Message}\n{StatusText}{ErrorHint(Error)}";
 
         private static string ErrorHint(int? error) => error switch
         {
-            31 => " · ERROR_GEN_FAILURE — zařízení neodpovědělo (adaptér/ovladač nepotvrdil I2C transakci)",
-            5 => " · ERROR_ACCESS_DENIED — přístup odepřen",
-            6 => " · ERROR_INVALID_HANDLE — neplatný handle monitoru (zkus Obnovit monitory)",
-            87 => " · ERROR_INVALID_PARAMETER — neplatný parametr",
-            1359 => " · ERROR_INTERNAL_ERROR — interní chyba ovladače",
+            31 => " · ERROR_GEN_FAILURE — device did not respond (adapter/driver did not acknowledge the I2C transaction)",
+            5 => " · ERROR_ACCESS_DENIED — access denied",
+            6 => " · ERROR_INVALID_HANDLE — invalid monitor handle (try Refresh monitors)",
+            87 => " · ERROR_INVALID_PARAMETER — invalid parameter",
+            1359 => " · ERROR_INTERNAL_ERROR — internal driver error",
             _ => string.Empty,
         };
     }
 
     /// <summary>
-    /// In-memory ring buffer transakcí s monitory (DDC/CI, DisplayConfig, GDI).
-    /// Nejnovější položky jsou na začátku kolekce (žádný autoscroll není potřeba).
-    /// Zápis je bezpečný z libovolného vlákna — mimo UI thread se přehodí přes Dispatcher.
+    /// In-memory ring buffer of monitor transactions (DDC/CI, DisplayConfig, GDI).
+    /// Newest entries are at the front of the collection (no autoscroll needed).
+    /// Writing is safe from any thread — calls off the UI thread are marshalled via Dispatcher.
     ///
-    /// Každá položka se zároveň appenduje do souboru traffic-YYYYMMDD.log
-    /// (pokud byl při konstrukci předán <c>filePath</c>), aby šel provoz
-    /// analyzovat zpětně i po zavření aplikace.
+    /// Each entry is also appended to a traffic-YYYYMMDD.log file
+    /// (if <c>filePath</c> was passed to the constructor), so the traffic
+    /// can be analyzed later even after the app is closed.
     /// </summary>
     public sealed class TrafficLog
     {
@@ -74,14 +74,14 @@ namespace G_Lumen.Services
                 }
                 catch
                 {
-                    _filePath = null; // diagnostika nesmí shodit appku
+                    _filePath = null; // diagnostics must never crash the app
                 }
             }
         }
 
         public ObservableCollection<TrafficEntry> Entries { get; } = new();
 
-        /// <summary>Zápis do monitoru (→).</summary>
+        /// <summary>Write to the monitor (→).</summary>
         public void Out(string channel, string message, bool success, int? error = null)
             => Add(new TrafficEntry
             {
@@ -93,7 +93,7 @@ namespace G_Lumen.Services
                 Error = error,
             });
 
-        /// <summary>Čtení z monitoru / systému (←).</summary>
+        /// <summary>Read from the monitor / system (←).</summary>
         public void In(string channel, string message, bool success, int? error = null)
             => Add(new TrafficEntry
             {
@@ -144,7 +144,7 @@ namespace G_Lumen.Services
             }
             catch
             {
-                // Logování nikdy nesmí shodit appku.
+                // Logging must never crash the app.
             }
         }
     }
