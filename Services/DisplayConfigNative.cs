@@ -22,6 +22,11 @@ namespace G_Lumen.Services
         public const int DISPLAYCONFIG_DEVICE_INFO_GET_SDR_WHITE_LEVEL = 11;
         public const uint DISPLAYCONFIG_DEVICE_INFO_SET_SDR_WHITE_LEVEL = 0xFFFFFFEE;
 
+        // DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY — values meaning "built-in panel".
+        public const uint DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EMBEDDED = 11;
+        public const uint DISPLAYCONFIG_OUTPUT_TECHNOLOGY_UDI_EMBEDDED = 14;
+        public const uint DISPLAYCONFIG_OUTPUT_TECHNOLOGY_INTERNAL = 0x80000000;
+
         [StructLayout(LayoutKind.Sequential)]
         public struct LUID
         {

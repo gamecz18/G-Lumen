@@ -88,6 +88,7 @@ namespace G_Lumen.Services
                         HPhysical = pm.hPhysicalMonitor,
                         StableId = $"{deviceId}#{pi}",
                         Description = desc,
+                        DeviceId = deviceId,
                         GdiDeviceName = mi.szDevice,
                     });
 

@@ -40,6 +40,7 @@ namespace G_Lumen
                     _mainViewModel = new MainViewModel(
                         _ddc,
                         new HdrService(AppLog.CreateLogger<HdrService>(), traffic),
+                        new WmiBrightnessService(AppLog.CreateLogger<WmiBrightnessService>(), traffic),
                         settings,
                         new AutostartManager(),
                         AppLog.CreateLogger<MainViewModel>(),

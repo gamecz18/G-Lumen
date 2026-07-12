@@ -20,6 +20,12 @@
             <Setter Property="Padding" Value="6"/>
             <Setter Property="CornerRadius" Value="6"/>
         </Style>
+        <Style Selector="RepeatButton.flat">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="CornerRadius" Value="6"/>
+        </Style>
         <Style Selector="SelectableTextBlock.detail">
             <Setter Property="FontFamily" Value="Cascadia Mono,Consolas"/>
             <Setter Property="FontSize" Value="10"/>
@@ -36,8 +42,8 @@
             Background="{DynamicResource SystemControlBackgroundListLowBrush}">
         <StackPanel Spacing="2">
 
-            <!-- Header: name + path, HDR toggle, detail -->
-            <Grid ColumnDefinitions="*,Auto,Auto">
+            <!-- Header: name + path, HDR toggle, force send, detail -->
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto">
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock Text="{Binding Name}"
                                FontWeight="SemiBold"
@@ -59,7 +65,16 @@
                               IsVisible="{Binding SupportsHdr}"
                               ToolTip.Tip="Control brightness via SDR white level (for HDR on)"/>
 
-                <ToggleButton Grid.Column="2"
+                <RepeatButton Grid.Column="2"
+                              Classes="flat"
+                              VerticalAlignment="Center"
+                              Delay="300" Interval="150"
+                              Command="{Binding ForceApplyCommand}"
+                              ToolTip.Tip="Force send: re-send the current value to the monitor now (hold to repeat)">
+                    <TextBlock Classes="glyph" Text="&#xE724;" FontSize="13"/>
+                </RepeatButton>
+
+                <ToggleButton Grid.Column="3"
                               Classes="flat"
                               VerticalAlignment="Center"
                               IsChecked="{Binding IsExpanded, Mode=TwoWay}"

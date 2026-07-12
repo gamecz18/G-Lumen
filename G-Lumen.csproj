@@ -26,5 +26,6 @@
     </PackageReference>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.1" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
+    <PackageReference Include="System.Management" Version="10.0.9" />
   </ItemGroup>
 </Project>

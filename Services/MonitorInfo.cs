@@ -22,6 +22,13 @@ namespace G_Lumen.Services
         public string Description { get; init; } = string.Empty;
 
         /// <summary>
+        /// Raw monitor DeviceID (device interface path from EnumDisplayDevices),
+        /// without the physical index suffix. Used to match the WMI brightness
+        /// instance for internal panels.
+        /// </summary>
+        public string DeviceId { get; init; } = string.Empty;
+
+        /// <summary>
         /// GDI display name (\\.\DISPLAYx) from MONITORINFOEX — bridges to the
         /// DisplayConfig API for HDR / SDR white level.
         /// </summary>

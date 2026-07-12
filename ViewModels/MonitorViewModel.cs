@@ -1,6 +1,7 @@
 using System;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using G_Lumen.Services;
 
 namespace G_Lumen.ViewModels
@@ -10,18 +11,22 @@ namespace G_Lumen.ViewModels
     /// Writes are throttled (DDC write ~50 ms, dragging the slider would otherwise
     /// flood the I2C bus).
     ///
-    /// Two control modes:
+    /// Three control modes:
     ///  • SDR (default): brightness via DDC/CI VCP 0x10.
     ///  • HDR (<see cref="HdrMode"/>): brightness via SDR white level (DisplayConfig),
     ///    since DDC doesn't control real brightness on an HDR monitor.
+    ///  • Internal panel (<see cref="IsInternal"/>): brightness via WMI
+    ///    (WmiSetBrightness) — laptop displays don't speak DDC/CI.
     /// </summary>
     public partial class MonitorViewModel : ViewModelBase
     {
         private readonly DdcCiService _ddc;
         private readonly HdrService _hdr;
+        private readonly WmiBrightnessService _wmi;
         private readonly SettingsStore _settings;
         private readonly MonitorInfo _monitor;
         private readonly DispatcherTimer _throttle;
+        private readonly string? _wmiInstance;
 
         // True during initialization / mode switching, so setting the value
         // doesn't trigger a write to the monitor.
@@ -29,12 +34,20 @@ namespace G_Lumen.ViewModels
         private bool _pending;
         private int _pendingValue;
 
-        public MonitorViewModel(DdcCiService ddc, HdrService hdr, SettingsStore settings, MonitorInfo monitor)
+        public MonitorViewModel(DdcCiService ddc, HdrService hdr, WmiBrightnessService wmi,
+            SettingsStore settings, MonitorInfo monitor)
         {
             _ddc = ddc;
             _hdr = hdr;
+            _wmi = wmi;
             _settings = settings;
             _monitor = monitor;
+
+            IsInternal = _hdr.IsInternal(monitor.GdiDeviceName);
+            _wmiInstance = _wmi.FindInstanceFor(monitor.DeviceId);
+            if (_wmiInstance is null && IsInternal)
+                _wmiInstance = _wmi.SingleInstanceOrNull();
+            UsesWmi = _wmiInstance is not null;
 
             _name = settings.GetName(monitor.StableId) ?? monitor.Description;
             SupportsHdr = _hdr.IsHdrAvailable(monitor.GdiDeviceName);
@@ -77,6 +90,12 @@ namespace G_Lumen.ViewModels
         /// <summary>Monitor supports HDR — only then does showing the toggle make sense.</summary>
         public bool SupportsHdr { get; }
 
+        /// <summary>Built-in laptop panel (detected via DisplayConfig output technology).</summary>
+        public bool IsInternal { get; }
+
+        /// <summary>Brightness goes through WMI (internal panel) instead of DDC/CI.</summary>
+        public bool UsesWmi { get; }
+
         /// <summary>HDR state at startup ("supported · active" etc.).</summary>
         public string HdrStatusText { get; }
 
@@ -95,12 +114,16 @@ namespace G_Lumen.ViewModels
         /// <summary>Short description of the active path, shown under the monitor name.</summary>
         public string Subtitle => HdrMode
             ? $"DisplayConfig · SDR white ≈ {HdrService.PercentToNits(Brightness):0} nits"
-            : "DDC/CI · VCP 0x10 (brightness)";
+            : UsesWmi
+                ? "WMI · WmiSetBrightness (internal panel)"
+                : "DDC/CI · VCP 0x10 (brightness)";
 
         /// <summary>Which API is used to write brightness.</summary>
         public string WriteInfo => HdrMode
             ? "DisplayConfigSetDeviceInfo · SDR white level"
-            : "SetVCPFeature · VCP 0x10";
+            : UsesWmi
+                ? "WmiSetBrightness · WmiMonitorBrightnessMethods"
+                : "SetVCPFeature · VCP 0x10";
 
         /// <summary>Refreshes the displayed name from settings (called by the Settings window after saving).</summary>
         public void RefreshName()
@@ -116,6 +139,17 @@ namespace G_Lumen.ViewModels
                     return HdrService.NitsToPercent(nits);
                 }
                 ReadInfo = "DisplayConfig · read failed → saved value";
+                return _settings.GetBrightness(_monitor.StableId) ?? 50;
+            }
+
+            if (UsesWmi)
+            {
+                if (_wmi.TryGetBrightness(_wmiInstance!, out uint wcur))
+                {
+                    ReadInfo = "WMI · read works";
+                    return (int)wcur;
+                }
+                ReadInfo = "WMI · read failed → saved value";
                 return _settings.GetBrightness(_monitor.StableId) ?? 50;
             }
 
@@ -163,15 +197,38 @@ namespace G_Lumen.ViewModels
                 return;
 
             _pending = false;
-            int value = _pendingValue;
+            WriteBrightness(_pendingValue);
+        }
 
-            if (HdrMode)
-                _hdr.SetSdrNits(_monitor.GdiDeviceName, HdrService.PercentToNits(value));
-            else
-                _ddc.SetBrightness(_monitor, (uint)value);
+        /// <summary>
+        /// Re-sends the current slider value to the monitor immediately, even if
+        /// nothing changed. Useful when the monitor lost the last write (power cycle,
+        /// input switch) — with a write-only DDC bus the app can't detect that itself.
+        /// Safe to spam: only touches the monitor, settings are already saved.
+        /// </summary>
+        [RelayCommand]
+        private void ForceApply()
+        {
+            _throttle.Stop();
+            _pending = false;
+            SendToMonitor(Math.Clamp(Brightness, 0, 100));
+        }
 
+        private void WriteBrightness(int value)
+        {
+            SendToMonitor(value);
             _settings.SetBrightness(_monitor.StableId, value);
             _settings.Save();
+        }
+
+        private void SendToMonitor(int value)
+        {
+            if (HdrMode)
+                _hdr.SetSdrNits(_monitor.GdiDeviceName, HdrService.PercentToNits(value));
+            else if (UsesWmi)
+                _wmi.SetBrightness(_wmiInstance!, (uint)value);
+            else
+                _ddc.SetBrightness(_monitor, (uint)value);
         }
     }
 }

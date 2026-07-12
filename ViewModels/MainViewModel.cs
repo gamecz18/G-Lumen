@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -18,17 +19,19 @@ namespace G_Lumen.ViewModels
     {
         private readonly DdcCiService _ddc;
         private readonly HdrService _hdr;
+        private readonly WmiBrightnessService _wmi;
         private readonly SettingsStore _settings;
         private readonly AutostartManager _autostart;
         private readonly ILogger _log;
         private bool _suppressAutostartWrite;
         private SettingsWindow? _settingsWindow;
 
-        public MainViewModel(DdcCiService ddc, HdrService hdr, SettingsStore settings,
-            AutostartManager autostart, ILogger logger, TrafficLog traffic)
+        public MainViewModel(DdcCiService ddc, HdrService hdr, WmiBrightnessService wmi,
+            SettingsStore settings, AutostartManager autostart, ILogger logger, TrafficLog traffic)
         {
             _ddc = ddc;
             _hdr = hdr;
+            _wmi = wmi;
             _settings = settings;
             _autostart = autostart;
             _log = logger;
@@ -59,9 +62,20 @@ namespace G_Lumen.ViewModels
             try
             {
                 _hdr.RefreshPaths();
+                _wmi.RefreshInstances();
                 Monitors.Clear();
-                foreach (var info in _ddc.Enumerate())
-                    Monitors.Add(new MonitorViewModel(_ddc, _hdr, _settings, info));
+
+                // Apply the saved display order; unknown monitors keep their
+                // enumeration order at the end (OrderBy is a stable sort).
+                var order = new System.Collections.Generic.Dictionary<string, int>();
+                foreach (var id in _settings.GetOrder())
+                    order.TryAdd(id, order.Count);
+
+                var infos = _ddc.Enumerate()
+                    .OrderBy(i => order.TryGetValue(i.StableId, out int idx) ? idx : int.MaxValue);
+
+                foreach (var info in infos)
+                    Monitors.Add(new MonitorViewModel(_ddc, _hdr, _wmi, _settings, info));
                 _log.LogInformation("Refresh: found {Count} monitor(s)", Monitors.Count);
             }
             catch (Exception ex)

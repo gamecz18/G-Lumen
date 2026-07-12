@@ -24,7 +24,7 @@ namespace G_Lumen.Services
         private readonly TrafficLog _traffic;
 
         // GDI device name (\\.\DISPLAYx, upper) → target for DisplayConfig queries.
-        private readonly Dictionary<string, (LUID adapterId, uint targetId)> _targets =
+        private readonly Dictionary<string, (LUID adapterId, uint targetId, uint outputTechnology)> _targets =
             new(StringComparer.OrdinalIgnoreCase);
 
         public HdrService(ILogger logger, TrafficLog traffic)
@@ -72,9 +72,9 @@ namespace G_Lumen.Services
                         continue;
 
                     _targets[src.viewGdiDeviceName] =
-                        (paths[i].targetInfo.adapterId, paths[i].targetInfo.id);
-                    _log.LogDebug("DisplayConfig target {Gdi} (targetId={Tid})",
-                        src.viewGdiDeviceName, paths[i].targetInfo.id);
+                        (paths[i].targetInfo.adapterId, paths[i].targetInfo.id, paths[i].targetInfo.outputTechnology);
+                    _log.LogDebug("DisplayConfig target {Gdi} (targetId={Tid}, outputTech=0x{Tech:X})",
+                        src.viewGdiDeviceName, paths[i].targetInfo.id, paths[i].targetInfo.outputTechnology);
                 }
             }
             catch (Exception ex)
@@ -89,6 +89,17 @@ namespace G_Lumen.Services
         /// fails on some drivers (AMD + cheap adapter) just like the DDC read-back.
         /// </summary>
         public bool HasTarget(string gdiDeviceName) => _targets.ContainsKey(gdiDeviceName);
+
+        /// <summary>
+        /// Is this a built-in panel (laptop display)? Detected from the DisplayConfig
+        /// output technology — internal panels don't speak DDC/CI and their brightness
+        /// is controlled via WMI instead.
+        /// </summary>
+        public bool IsInternal(string gdiDeviceName)
+            => _targets.TryGetValue(gdiDeviceName, out var t)
+               && t.outputTechnology is DISPLAYCONFIG_OUTPUT_TECHNOLOGY_INTERNAL
+                   or DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EMBEDDED
+                   or DISPLAYCONFIG_OUTPUT_TECHNOLOGY_UDI_EMBEDDED;
 
         /// <summary>Does the monitor support advanced color (HDR), whether it's currently on or not?</summary>
         public bool IsHdrAvailable(string gdiDeviceName)
@@ -209,7 +220,7 @@ namespace G_Lumen.Services
             }
         }
 
-        private static DISPLAYCONFIG_DEVICE_INFO_HEADER MakeHeader(uint type, uint size, (LUID adapterId, uint targetId) t)
+        private static DISPLAYCONFIG_DEVICE_INFO_HEADER MakeHeader(uint type, uint size, (LUID adapterId, uint targetId, uint outputTechnology) t)
             => new()
             {
                 type = type,

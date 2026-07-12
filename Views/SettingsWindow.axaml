@@ -21,15 +21,23 @@
         <Style Selector="TextBlock.dim">
             <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
         </Style>
+        <Style Selector="Button.move">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="5,2"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
     </Window.Styles>
 
     <DockPanel>
 
         <!-- Header -->
         <StackPanel DockPanel.Dock="Top" Margin="20,18,20,12">
-            <TextBlock Text="Monitor names" FontSize="18" FontWeight="Bold"/>
+            <TextBlock Text="Monitors" FontSize="18" FontWeight="Bold"/>
             <TextBlock Classes="dim"
-                       Text="Custom names are shown in the popup instead of the system description."
+                       Text="Rename monitors and use the arrows to change their order in the popup."
                        TextWrapping="Wrap"
                        FontSize="12"
                        Margin="0,4,0,0"/>
@@ -64,20 +72,28 @@
                                 Padding="12"
                                 CornerRadius="8"
                                 Background="{DynamicResource SystemControlBackgroundListLowBrush}">
-                            <Grid ColumnDefinitions="Auto,*">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
 
+                                <!-- Position badge -->
                                 <Border Width="38" Height="38"
                                         CornerRadius="8"
                                         VerticalAlignment="Top"
                                         Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
-                                    <TextBlock Classes="glyph"
-                                               Text="&#xE7F4;"
-                                               FontSize="17"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"/>
+                                    <StackPanel HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Spacing="0">
+                                        <TextBlock Classes="glyph"
+                                                   Text="&#xE7F4;"
+                                                   FontSize="13"
+                                                   HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding Position}"
+                                                   FontSize="10"
+                                                   FontWeight="SemiBold"
+                                                   HorizontalAlignment="Center"/>
+                                    </StackPanel>
                                 </Border>
 
-                                <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="3">
+                                <StackPanel Grid.Column="1" Margin="12,0,12,0" Spacing="3">
                                     <TextBlock Text="{Binding Description}"
                                                FontSize="12"
                                                FontWeight="SemiBold"
@@ -89,6 +105,25 @@
                                     <TextBox Text="{Binding Name, Mode=TwoWay}"
                                              Margin="0,3,0,0"
                                              PlaceholderText="{Binding Description}"/>
+                                </StackPanel>
+
+                                <!-- Reorder arrows -->
+                                <StackPanel Grid.Column="2"
+                                            VerticalAlignment="Center"
+                                            Spacing="2"
+                                            Width="30">
+                                    <Button Classes="move"
+                                            Command="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).MoveUpCommand}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip.Tip="Move up">
+                                        <TextBlock Classes="glyph" Text="&#xE70E;" FontSize="11"/>
+                                    </Button>
+                                    <Button Classes="move"
+                                            Command="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).MoveDownCommand}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip.Tip="Move down">
+                                        <TextBlock Classes="glyph" Text="&#xE70D;" FontSize="11"/>
+                                    </Button>
                                 </StackPanel>
                             </Grid>
                         </Border>

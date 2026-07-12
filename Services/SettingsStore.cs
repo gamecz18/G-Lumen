@@ -82,6 +82,15 @@ namespace G_Lumen.Services
         public void SetHdrMode(string stableId, bool value)
             => _data.HdrMode[stableId] = value;
 
+        /// <summary>
+        /// Saved display order of monitors (StableIds, first = top of the popup).
+        /// Monitors not in the list keep their enumeration order at the end.
+        /// </summary>
+        public IReadOnlyList<string> GetOrder() => _data.Order;
+
+        public void SetOrder(IEnumerable<string> stableIds)
+            => _data.Order = new List<string>(stableIds);
+
         private static readonly JsonSerializerOptions SerializerOptions = new()
         {
             WriteIndented = true,
@@ -92,6 +101,7 @@ namespace G_Lumen.Services
             public Dictionary<string, int> Brightness { get; set; } = new();
             public Dictionary<string, string> Names { get; set; } = new();
             public Dictionary<string, bool> HdrMode { get; set; } = new();
+            public List<string> Order { get; set; } = new();
         }
     }
 }
