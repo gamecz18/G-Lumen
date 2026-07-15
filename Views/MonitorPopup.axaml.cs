@@ -2,6 +2,9 @@ using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Platform;
+using G_Lumen.Services;
+using G_Lumen.ViewModels;
 
 namespace G_Lumen.Views
 {
@@ -58,7 +61,9 @@ namespace G_Lumen.Views
 
         private void PositionBottomRight()
         {
-            var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
+            var screen = ResolveConfiguredScreen()
+                ?? Screens.ScreenFromWindow(this)
+                ?? Screens.Primary;
             if (screen is null)
                 return;
 
@@ -76,6 +81,22 @@ namespace G_Lumen.Views
             int y = area.Y + area.Height - height - (int)(margin * scale);
 
             Position = new PixelPoint(Math.Max(area.X, x), Math.Max(area.Y, y));
+        }
+
+        /// <summary>
+        /// Screen chosen in Settings ("Popup screen"), or null for automatic
+        /// placement — also when the chosen monitor is no longer connected.
+        /// </summary>
+        private Screen? ResolveConfiguredScreen()
+        {
+            if (DataContext is not MainViewModel vm)
+                return null;
+
+            string? gdiName = vm.PopupTargetGdiName;
+            if (gdiName is null || !ScreenLocator.TryGetCenter(gdiName, out int cx, out int cy))
+                return null;
+
+            return Screens.ScreenFromPoint(new PixelPoint(cx, cy));
         }
     }
 }

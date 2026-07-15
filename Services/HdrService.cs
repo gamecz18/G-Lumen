@@ -16,9 +16,15 @@ namespace G_Lumen.Services
     /// </summary>
     public sealed class HdrService
     {
-        /// <summary>Brightness range in nits, mapped to the 0–100% slider.</summary>
+        /// <summary>
+        /// Brightness range in nits, mapped to the 0–100% slider. Both bounds are
+        /// hard limits of the Windows API: raw 1000–6000, i.e. 80–480 nits — writes
+        /// outside that range fail with ERROR_INVALID_PARAMETER (87). The per-monitor
+        /// maximum in Settings can therefore only narrow the range, never exceed 480.
+        /// </summary>
         public const double MinNits = 80.0;
-        public const double MaxNits = 480.0;
+        public const double ApiMaxNits = 480.0;
+        public const double DefaultMaxNits = ApiMaxNits;
 
         private readonly ILogger _log;
         private readonly TrafficLog _traffic;
@@ -143,14 +149,15 @@ namespace G_Lumen.Services
         }
 
         /// <summary>Sets the SDR white level in nits (undocumented API).</summary>
-        public bool SetSdrNits(string gdiDeviceName, double nits)
+        public bool SetSdrNits(string gdiDeviceName, double nits, double maxNits = DefaultMaxNits)
         {
             if (!_targets.TryGetValue(gdiDeviceName, out var t))
                 return false;
 
             try
             {
-                nits = Math.Clamp(nits, MinNits, MaxNits);
+                double upper = Math.Clamp(maxNits, MinNits, ApiMaxNits);
+                nits = Math.Clamp(nits, MinNits, upper);
                 var packet = new DISPLAYCONFIG_SET_SDR_WHITE_LEVEL
                 {
                     header = MakeHeader(DISPLAYCONFIG_DEVICE_INFO_SET_SDR_WHITE_LEVEL,
@@ -165,9 +172,10 @@ namespace G_Lumen.Services
                     rc == ERROR_SUCCESS, rc == ERROR_SUCCESS ? null : rc);
 
                 if (rc != ERROR_SUCCESS)
-                    _log.LogWarning("SDR white level write failed rc={Rc} ({Gdi})", rc, gdiDeviceName);
+                    _log.LogWarning("SDR white level write failed rc={Rc} nits={Nits:0.#} raw={Raw} ({Gdi})",
+                        rc, nits, packet.SDRWhiteLevel, gdiDeviceName);
                 else
-                    _log.LogDebug("SDR white level {Nits} nits -> {Gdi}", nits, gdiDeviceName);
+                    _log.LogDebug("SDR white level {Nits:0.#} nits -> {Gdi}", nits, gdiDeviceName);
                 return rc == ERROR_SUCCESS;
             }
             catch (Exception ex)
@@ -177,13 +185,19 @@ namespace G_Lumen.Services
             }
         }
 
-        /// <summary>Converts a slider percentage (0–100) to nits within the Min–Max range.</summary>
-        public static double PercentToNits(int percent)
-            => MinNits + Math.Clamp(percent, 0, 100) / 100.0 * (MaxNits - MinNits);
+        /// <summary>Converts a slider percentage (0–100) to nits within the Min–max range.</summary>
+        public static double PercentToNits(int percent, double maxNits = DefaultMaxNits)
+        {
+            maxNits = Math.Max(maxNits, MinNits + 1);
+            return MinNits + Math.Clamp(percent, 0, 100) / 100.0 * (maxNits - MinNits);
+        }
 
         /// <summary>Converts nits back to a slider percentage (0–100).</summary>
-        public static int NitsToPercent(double nits)
-            => (int)Math.Round(Math.Clamp((nits - MinNits) / (MaxNits - MinNits), 0.0, 1.0) * 100);
+        public static int NitsToPercent(double nits, double maxNits = DefaultMaxNits)
+        {
+            maxNits = Math.Max(maxNits, MinNits + 1);
+            return (int)Math.Round(Math.Clamp((nits - MinNits) / (maxNits - MinNits), 0.0, 1.0) * 100);
+        }
 
         private bool TryGetAdvancedColor(string gdiDeviceName, out DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO info)
         {

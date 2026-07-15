@@ -3,16 +3,19 @@
         xmlns:vm="using:G_Lumen.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="440" d:DesignHeight="520"
+        mc:Ignorable="d" d:DesignWidth="460" d:DesignHeight="560"
         x:Class="G_Lumen.Views.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
         Title="G-Lumen — Settings"
-        Width="440"
-        Height="520"
-        MinWidth="380"
-        MinHeight="340"
+        Width="460"
+        Height="560"
+        MinWidth="400"
+        MinHeight="360"
         WindowStartupLocation="CenterScreen"
-        CanResize="True">
+        CanResize="True"
+        RequestedThemeVariant="Dark"
+        TransparencyLevelHint="AcrylicBlur"
+        Background="Transparent">
 
     <Window.Styles>
         <Style Selector="TextBlock.glyph">
@@ -21,6 +24,26 @@
         <Style Selector="TextBlock.dim">
             <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
         </Style>
+        <Style Selector="TextBlock.section">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="LetterSpacing" Value="1.5"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+            <Setter Property="Margin" Value="4,0,0,6"/>
+        </Style>
+
+        <!-- Cards on top of the acrylic backdrop -->
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="#0CFFFFFF"/>
+            <Setter Property="BorderBrush" Value="#16FFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+        </Style>
+        <Style Selector="Border.card:pointerover">
+            <Setter Property="Background" Value="#12FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#22FFFFFF"/>
+        </Style>
+
         <Style Selector="Button.move">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -29,107 +52,224 @@
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
         </Style>
+        <Style Selector="Button.move:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#28FFFFFF"/>
+        </Style>
+
+        <Style Selector="Button.chip">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Padding" Value="9,3"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Background" Value="#22FFFFFF"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
     </Window.Styles>
 
-    <DockPanel>
+    <Panel>
+        <!-- Blurred acrylic backdrop (falls back to a solid dark blue-grey) -->
+        <ExperimentalAcrylicBorder IsHitTestVisible="False">
+            <ExperimentalAcrylicBorder.Material>
+                <ExperimentalAcrylicMaterial BackgroundSource="Digger"
+                                             TintColor="#0D0D13"
+                                             TintOpacity="1"
+                                             MaterialOpacity="0.85"
+                                             FallbackColor="#15151D"/>
+            </ExperimentalAcrylicBorder.Material>
+        </ExperimentalAcrylicBorder>
 
-        <!-- Header -->
-        <StackPanel DockPanel.Dock="Top" Margin="20,18,20,12">
-            <TextBlock Text="Monitors" FontSize="18" FontWeight="Bold"/>
-            <TextBlock Classes="dim"
-                       Text="Rename monitors and use the arrows to change their order in the popup."
-                       TextWrapping="Wrap"
-                       FontSize="12"
-                       Margin="0,4,0,0"/>
-        </StackPanel>
+        <DockPanel>
 
-        <!-- Button footer -->
-        <Border DockPanel.Dock="Bottom"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                BorderThickness="0,1,0,0"
-                Padding="20,12">
-            <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Right"
-                        Spacing="8">
-                <Button Content="Cancel"
-                        MinWidth="90"
-                        IsCancel="True"
-                        Command="{Binding CancelCommand}"/>
-                <Button Content="Save"
-                        MinWidth="90"
-                        Classes="accent"
-                        IsDefault="True"
-                        Command="{Binding SaveCommand}"/>
+            <!-- Header -->
+            <Grid DockPanel.Dock="Top"
+                  ColumnDefinitions="Auto,*"
+                  Margin="22,20,22,16">
+                <Border Width="42" Height="42"
+                        CornerRadius="12"
+                        VerticalAlignment="Center">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                            <GradientStop Offset="0" Color="#FFC46B"/>
+                            <GradientStop Offset="1" Color="#E8672E"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <TextBlock Classes="glyph"
+                               Text="&#xE706;"
+                               FontSize="20"
+                               Foreground="#FFF6E8"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                </Border>
+
+                <StackPanel Grid.Column="1"
+                            Margin="14,0,0,0"
+                            VerticalAlignment="Center"
+                            Spacing="1">
+                    <TextBlock Text="Settings" FontSize="20" FontWeight="Bold"/>
+                    <TextBlock Classes="dim"
+                               Text="G-Lumen · monitor brightness"
+                               FontSize="12"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Button footer -->
+            <Border DockPanel.Dock="Bottom"
+                    Background="#3A000000"
+                    BorderBrush="#16FFFFFF"
+                    BorderThickness="0,1,0,0"
+                    Padding="22,12">
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Spacing="8">
+                    <Button Content="Cancel"
+                            MinWidth="90"
+                            CornerRadius="8"
+                            IsCancel="True"
+                            Command="{Binding CancelCommand}"/>
+                    <Button Content="Save"
+                            MinWidth="90"
+                            CornerRadius="8"
+                            Classes="accent"
+                            IsDefault="True"
+                            Command="{Binding SaveCommand}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Popup screen selection -->
+            <StackPanel DockPanel.Dock="Bottom" Margin="22,6,22,16">
+                <TextBlock Classes="section" Text="POPUP SCREEN"/>
+                <Border Classes="card" Padding="12,10">
+                    <StackPanel Spacing="6">
+                        <TextBlock Classes="dim"
+                                   Text="Which display the brightness popup appears on."
+                                   TextWrapping="Wrap"
+                                   FontSize="12"/>
+                        <ComboBox ItemsSource="{Binding PopupScreenOptions}"
+                                  SelectedItem="{Binding SelectedPopupScreen, Mode=TwoWay}"
+                                  HorizontalAlignment="Stretch">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate DataType="vm:PopupScreenOption">
+                                    <TextBlock Text="{Binding Label}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                </Border>
             </StackPanel>
-        </Border>
 
-        <!-- Monitor cards -->
-        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
-            <ItemsControl ItemsSource="{Binding Monitors}" Margin="20,0,20,8">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate DataType="vm:MonitorNameEntry">
-                        <Border Margin="0,0,0,10"
-                                Padding="12"
-                                CornerRadius="8"
-                                Background="{DynamicResource SystemControlBackgroundListLowBrush}">
-                            <Grid ColumnDefinitions="Auto,*,Auto">
+            <!-- Monitor cards -->
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="22,0,22,8">
+                    <TextBlock Classes="section" Text="MONITORS"/>
+                    <ItemsControl ItemsSource="{Binding Monitors}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="vm:MonitorNameEntry">
+                                <Border Classes="card"
+                                        Margin="0,0,0,10"
+                                        Padding="12">
+                                    <Grid ColumnDefinitions="Auto,*,Auto">
 
-                                <!-- Position badge -->
-                                <Border Width="38" Height="38"
-                                        CornerRadius="8"
-                                        VerticalAlignment="Top"
-                                        Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
-                                    <StackPanel HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                Spacing="0">
-                                        <TextBlock Classes="glyph"
-                                                   Text="&#xE7F4;"
-                                                   FontSize="13"
-                                                   HorizontalAlignment="Center"/>
-                                        <TextBlock Text="{Binding Position}"
-                                                   FontSize="10"
-                                                   FontWeight="SemiBold"
-                                                   HorizontalAlignment="Center"/>
-                                    </StackPanel>
+                                        <!-- Position badge -->
+                                        <Border Width="38" Height="38"
+                                                CornerRadius="10"
+                                                VerticalAlignment="Top">
+                                            <Border.Background>
+                                                <SolidColorBrush Color="{DynamicResource SystemAccentColor}"
+                                                                 Opacity="0.30"/>
+                                            </Border.Background>
+                                            <StackPanel HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        Spacing="0">
+                                                <TextBlock Classes="glyph"
+                                                           Text="&#xE7F4;"
+                                                           FontSize="13"
+                                                           HorizontalAlignment="Center"/>
+                                                <TextBlock Text="{Binding Position}"
+                                                           FontSize="10"
+                                                           FontWeight="Bold"
+                                                           HorizontalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <StackPanel Grid.Column="1" Margin="12,0,12,0" Spacing="3">
+                                            <TextBlock Text="{Binding Description}"
+                                                       FontSize="12"
+                                                       FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Classes="dim"
+                                                       Text="{Binding Monitor.GdiDeviceName}"
+                                                       FontFamily="Cascadia Mono,Consolas"
+                                                       FontSize="10"/>
+                                            <TextBox Text="{Binding Name, Mode=TwoWay}"
+                                                     Margin="0,3,0,0"
+                                                     CornerRadius="6"
+                                                     PlaceholderText="{Binding Description}"/>
+
+                                            <!-- HDR slider range (only for HDR-capable monitors) -->
+                                            <StackPanel Margin="0,4,0,0"
+                                                        Spacing="3"
+                                                        IsVisible="{Binding SupportsHdr}">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Classes="dim"
+                                                               Text="HDR max"
+                                                               FontSize="11"
+                                                               VerticalAlignment="Center"
+                                                               ToolTip.Tip="SDR white level at 100 % of the slider. Windows caps this at 480 nits — use a lower value to limit the range."/>
+                                                    <NumericUpDown Value="{Binding HdrMaxNits, Mode=TwoWay}"
+                                                                   Minimum="100" Maximum="480"
+                                                                   Increment="20"
+                                                                   FormatString="0"
+                                                                   Width="130"
+                                                                   FontSize="11"
+                                                                   CornerRadius="6"/>
+                                                    <TextBlock Classes="dim"
+                                                               Text="nits"
+                                                               FontSize="11"
+                                                               VerticalAlignment="Center"/>
+                                                    <Button Classes="chip"
+                                                            Content="Auto"
+                                                            Command="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).AutoHdrMaxCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTip.Tip="Fill in what the panel reports in its EDID (DXGI). You can still edit the value afterwards."/>
+                                                    <Button Classes="chip"
+                                                            Content="Default"
+                                                            Command="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).ResetHdrMaxCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTip.Tip="Reset to the built-in default (480 nits)"/>
+                                                </StackPanel>
+                                                <TextBlock Classes="dim"
+                                                           Text="{Binding HdrAutoInfo}"
+                                                           FontSize="10"
+                                                           TextWrapping="Wrap"
+                                                           IsVisible="{Binding HdrAutoInfo, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <!-- Reorder arrows -->
+                                        <StackPanel Grid.Column="2"
+                                                    VerticalAlignment="Center"
+                                                    Spacing="2"
+                                                    Width="30">
+                                            <Button Classes="move"
+                                                    Command="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).MoveUpCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip.Tip="Move up">
+                                                <TextBlock Classes="glyph" Text="&#xE70E;" FontSize="11"/>
+                                            </Button>
+                                            <Button Classes="move"
+                                                    Command="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).MoveDownCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip.Tip="Move down">
+                                                <TextBlock Classes="glyph" Text="&#xE70D;" FontSize="11"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
                                 </Border>
-
-                                <StackPanel Grid.Column="1" Margin="12,0,12,0" Spacing="3">
-                                    <TextBlock Text="{Binding Description}"
-                                               FontSize="12"
-                                               FontWeight="SemiBold"
-                                               TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Classes="dim"
-                                               Text="{Binding Monitor.GdiDeviceName}"
-                                               FontFamily="Cascadia Mono,Consolas"
-                                               FontSize="10"/>
-                                    <TextBox Text="{Binding Name, Mode=TwoWay}"
-                                             Margin="0,3,0,0"
-                                             PlaceholderText="{Binding Description}"/>
-                                </StackPanel>
-
-                                <!-- Reorder arrows -->
-                                <StackPanel Grid.Column="2"
-                                            VerticalAlignment="Center"
-                                            Spacing="2"
-                                            Width="30">
-                                    <Button Classes="move"
-                                            Command="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).MoveUpCommand}"
-                                            CommandParameter="{Binding}"
-                                            ToolTip.Tip="Move up">
-                                        <TextBlock Classes="glyph" Text="&#xE70E;" FontSize="11"/>
-                                    </Button>
-                                    <Button Classes="move"
-                                            Command="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).MoveDownCommand}"
-                                            CommandParameter="{Binding}"
-                                            ToolTip.Tip="Move down">
-                                        <TextBlock Classes="glyph" Text="&#xE70D;" FontSize="11"/>
-                                    </Button>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
-    </DockPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+        </DockPanel>
+    </Panel>
 </Window>

@@ -46,6 +46,22 @@ namespace G_Lumen.ViewModels
 
         public ObservableCollection<MonitorViewModel> Monitors { get; } = new();
 
+        /// <summary>
+        /// GDI display name (\\.\DISPLAYx) of the monitor the popup should appear on,
+        /// or null for automatic placement (screen with the system tray). Returns null
+        /// when the chosen monitor is no longer connected.
+        /// </summary>
+        public string? PopupTargetGdiName
+        {
+            get
+            {
+                string? id = _settings.GetPopupMonitor();
+                if (id is null)
+                    return null;
+                return Monitors.FirstOrDefault(m => m.StableId == id)?.GdiDeviceName;
+            }
+        }
+
         /// <summary>Live feed of monitor transactions for the diagnostics panel.</summary>
         public TrafficLog Traffic { get; }
 

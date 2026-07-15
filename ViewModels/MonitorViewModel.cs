@@ -34,6 +34,9 @@ namespace G_Lumen.ViewModels
         private bool _pending;
         private int _pendingValue;
 
+        // Upper bound of the HDR slider in nits (per-monitor, from Settings).
+        private double _hdrMaxNits;
+
         public MonitorViewModel(DdcCiService ddc, HdrService hdr, WmiBrightnessService wmi,
             SettingsStore settings, MonitorInfo monitor)
         {
@@ -50,6 +53,7 @@ namespace G_Lumen.ViewModels
             UsesWmi = _wmiInstance is not null;
 
             _name = settings.GetName(monitor.StableId) ?? monitor.Description;
+            _hdrMaxNits = settings.GetHdrMaxNits(monitor.StableId) ?? HdrService.DefaultMaxNits;
             SupportsHdr = _hdr.IsHdrAvailable(monitor.GdiDeviceName);
 
             bool hdrActiveNow = SupportsHdr && _hdr.IsHdrActive(monitor.GdiDeviceName);
@@ -113,7 +117,7 @@ namespace G_Lumen.ViewModels
 
         /// <summary>Short description of the active path, shown under the monitor name.</summary>
         public string Subtitle => HdrMode
-            ? $"DisplayConfig · SDR white ≈ {HdrService.PercentToNits(Brightness):0} nits"
+            ? $"DisplayConfig · SDR white ≈ {HdrService.PercentToNits(Brightness, _hdrMaxNits):0} nits"
             : UsesWmi
                 ? "WMI · WmiSetBrightness (internal panel)"
                 : "DDC/CI · VCP 0x10 (brightness)";
@@ -129,6 +133,27 @@ namespace G_Lumen.ViewModels
         public void RefreshName()
             => Name = _settings.GetName(_monitor.StableId) ?? _monitor.Description;
 
+        /// <summary>
+        /// Re-reads the HDR nits range from settings (called by the Settings window
+        /// after saving). In HDR mode the slider is re-resolved so the percentage
+        /// matches the new range — without writing to the monitor.
+        /// </summary>
+        public void RefreshHdrRange()
+        {
+            double maxNits = _settings.GetHdrMaxNits(_monitor.StableId) ?? HdrService.DefaultMaxNits;
+            if (Math.Abs(maxNits - _hdrMaxNits) < 0.1)
+                return;
+
+            _hdrMaxNits = maxNits;
+            if (HdrMode)
+            {
+                _suppressWrite = true;
+                Brightness = ResolveInitialBrightness();
+                _suppressWrite = false;
+            }
+            OnPropertyChanged(nameof(Subtitle));
+        }
+
         private int ResolveInitialBrightness()
         {
             if (HdrMode)
@@ -136,7 +161,7 @@ namespace G_Lumen.ViewModels
                 if (_hdr.TryGetSdrNits(_monitor.GdiDeviceName, out double nits))
                 {
                     ReadInfo = "DisplayConfig · read works";
-                    return HdrService.NitsToPercent(nits);
+                    return HdrService.NitsToPercent(nits, _hdrMaxNits);
                 }
                 ReadInfo = "DisplayConfig · read failed → saved value";
                 return _settings.GetBrightness(_monitor.StableId) ?? 50;
@@ -224,7 +249,8 @@ namespace G_Lumen.ViewModels
         private void SendToMonitor(int value)
         {
             if (HdrMode)
-                _hdr.SetSdrNits(_monitor.GdiDeviceName, HdrService.PercentToNits(value));
+                _hdr.SetSdrNits(_monitor.GdiDeviceName,
+                    HdrService.PercentToNits(value, _hdrMaxNits), _hdrMaxNits);
             else if (UsesWmi)
                 _wmi.SetBrightness(_wmiInstance!, (uint)value);
             else

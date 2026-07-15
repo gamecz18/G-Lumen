@@ -83,6 +83,36 @@ namespace G_Lumen.Services
             => _data.HdrMode[stableId] = value;
 
         /// <summary>
+        /// Upper bound of the HDR slider in nits (SDR white level at 100 %),
+        /// or null to use the default (<see cref="HdrService.DefaultMaxNits"/>).
+        /// Clamped to the Windows API ceiling (480 nits) — higher values fail
+        /// with ERROR_INVALID_PARAMETER, so they are never returned even if an
+        /// older settings.json contains them.
+        /// </summary>
+        public double? GetHdrMaxNits(string stableId)
+            => _data.HdrMaxNits.TryGetValue(stableId, out double v)
+                ? Math.Clamp(v, 100, HdrService.ApiMaxNits)
+                : null;
+
+        public void SetHdrMaxNits(string stableId, double? value)
+        {
+            if (value is not double v || v <= HdrService.MinNits)
+                _data.HdrMaxNits.Remove(stableId);
+            else
+                _data.HdrMaxNits[stableId] = Math.Clamp(v, 100, HdrService.ApiMaxNits);
+        }
+
+        /// <summary>
+        /// StableId of the monitor the popup should appear on,
+        /// or null for automatic (screen with the system tray).
+        /// </summary>
+        public string? GetPopupMonitor()
+            => string.IsNullOrWhiteSpace(_data.PopupMonitor) ? null : _data.PopupMonitor;
+
+        public void SetPopupMonitor(string? stableId)
+            => _data.PopupMonitor = stableId;
+
+        /// <summary>
         /// Saved display order of monitors (StableIds, first = top of the popup).
         /// Monitors not in the list keep their enumeration order at the end.
         /// </summary>
@@ -101,7 +131,9 @@ namespace G_Lumen.Services
             public Dictionary<string, int> Brightness { get; set; } = new();
             public Dictionary<string, string> Names { get; set; } = new();
             public Dictionary<string, bool> HdrMode { get; set; } = new();
+            public Dictionary<string, double> HdrMaxNits { get; set; } = new();
             public List<string> Order { get; set; } = new();
+            public string? PopupMonitor { get; set; }
         }
     }
 }
