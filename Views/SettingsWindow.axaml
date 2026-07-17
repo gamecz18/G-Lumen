@@ -64,6 +64,16 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
+
+        <Style Selector="TabControl">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="TabItem">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="MinHeight" Value="34"/>
+        </Style>
     </Window.Styles>
 
     <Panel>
@@ -83,7 +93,7 @@
             <!-- Header -->
             <Grid DockPanel.Dock="Top"
                   ColumnDefinitions="Auto,*"
-                  Margin="22,20,22,16">
+                  Margin="22,20,22,10">
                 <Border Width="42" Height="42"
                         CornerRadius="12"
                         VerticalAlignment="Center">
@@ -135,141 +145,324 @@
                 </StackPanel>
             </Border>
 
-            <!-- Popup screen selection -->
-            <StackPanel DockPanel.Dock="Bottom" Margin="22,6,22,16">
-                <TextBlock Classes="section" Text="POPUP SCREEN"/>
-                <Border Classes="card" Padding="12,10">
-                    <StackPanel Spacing="6">
-                        <TextBlock Classes="dim"
-                                   Text="Which display the brightness popup appears on."
-                                   TextWrapping="Wrap"
-                                   FontSize="12"/>
-                        <ComboBox ItemsSource="{Binding PopupScreenOptions}"
-                                  SelectedItem="{Binding SelectedPopupScreen, Mode=TwoWay}"
-                                  HorizontalAlignment="Stretch">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate DataType="vm:PopupScreenOption">
-                                    <TextBlock Text="{Binding Label}"/>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
+            <TabControl Margin="12,0,12,0">
 
-            <!-- Monitor cards -->
-            <ScrollViewer HorizontalScrollBarVisibility="Disabled">
-                <StackPanel Margin="22,0,22,8">
-                    <TextBlock Classes="section" Text="MONITORS"/>
-                    <ItemsControl ItemsSource="{Binding Monitors}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="vm:MonitorNameEntry">
-                                <Border Classes="card"
-                                        Margin="0,0,0,10"
-                                        Padding="12">
-                                    <Grid ColumnDefinitions="Auto,*,Auto">
+                <!-- ============ TAB: MONITORS ============ -->
+                <TabItem Header="Monitors">
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="10,10,10,8">
 
-                                        <!-- Position badge -->
-                                        <Border Width="38" Height="38"
-                                                CornerRadius="10"
-                                                VerticalAlignment="Top">
-                                            <Border.Background>
-                                                <SolidColorBrush Color="{DynamicResource SystemAccentColor}"
-                                                                 Opacity="0.30"/>
-                                            </Border.Background>
-                                            <StackPanel HorizontalAlignment="Center"
-                                                        VerticalAlignment="Center"
-                                                        Spacing="0">
-                                                <TextBlock Classes="glyph"
-                                                           Text="&#xE7F4;"
-                                                           FontSize="13"
-                                                           HorizontalAlignment="Center"/>
-                                                <TextBlock Text="{Binding Position}"
-                                                           FontSize="10"
-                                                           FontWeight="Bold"
-                                                           HorizontalAlignment="Center"/>
+                            <ItemsControl ItemsSource="{Binding Monitors}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="vm:MonitorNameEntry">
+                                        <Border Classes="card"
+                                                Margin="0,0,0,10"
+                                                Padding="12">
+                                            <Grid ColumnDefinitions="Auto,*,Auto">
+
+                                                <!-- Position badge -->
+                                                <Border Width="38" Height="38"
+                                                        CornerRadius="10"
+                                                        VerticalAlignment="Top">
+                                                    <Border.Background>
+                                                        <SolidColorBrush Color="{DynamicResource SystemAccentColor}"
+                                                                         Opacity="0.30"/>
+                                                    </Border.Background>
+                                                    <StackPanel HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                Spacing="0">
+                                                        <TextBlock Classes="glyph"
+                                                                   Text="&#xE7F4;"
+                                                                   FontSize="13"
+                                                                   HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding Position}"
+                                                                   FontSize="10"
+                                                                   FontWeight="Bold"
+                                                                   HorizontalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <StackPanel Grid.Column="1" Margin="12,0,12,0" Spacing="3">
+                                                    <TextBlock Text="{Binding Description}"
+                                                               FontSize="12"
+                                                               FontWeight="SemiBold"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Classes="dim"
+                                                               Text="{Binding Monitor.GdiDeviceName}"
+                                                               FontFamily="Cascadia Mono,Consolas"
+                                                               FontSize="10"/>
+                                                    <TextBox Text="{Binding Name, Mode=TwoWay}"
+                                                             Margin="0,3,0,0"
+                                                             CornerRadius="6"
+                                                             PlaceholderText="{Binding Description}"/>
+
+                                                    <!-- HDR slider range (only for HDR-capable monitors) -->
+                                                    <StackPanel Margin="0,4,0,0"
+                                                                Spacing="3"
+                                                                IsVisible="{Binding SupportsHdr}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                                            <TextBlock Classes="dim"
+                                                                       Text="HDR max"
+                                                                       FontSize="11"
+                                                                       VerticalAlignment="Center"
+                                                                       ToolTip.Tip="SDR white level at 100 % of the slider. Windows caps this at 480 nits — use a lower value to limit the range."/>
+                                                            <NumericUpDown Value="{Binding HdrMaxNits, Mode=TwoWay}"
+                                                                           Minimum="100" Maximum="480"
+                                                                           Increment="20"
+                                                                           FormatString="0"
+                                                                           Width="130"
+                                                                           FontSize="11"
+                                                                           CornerRadius="6"/>
+                                                            <TextBlock Classes="dim"
+                                                                       Text="nits"
+                                                                       FontSize="11"
+                                                                       VerticalAlignment="Center"/>
+                                                            <Button Classes="chip"
+                                                                    Content="Auto"
+                                                                    Command="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).AutoHdrMaxCommand}"
+                                                                    CommandParameter="{Binding}"
+                                                                    ToolTip.Tip="Fill in what the panel reports in its EDID (DXGI). You can still edit the value afterwards."/>
+                                                            <Button Classes="chip"
+                                                                    Content="Default"
+                                                                    Command="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).ResetHdrMaxCommand}"
+                                                                    CommandParameter="{Binding}"
+                                                                    ToolTip.Tip="Reset to the built-in default (480 nits)"/>
+                                                        </StackPanel>
+                                                        <TextBlock Classes="dim"
+                                                                   Text="{Binding HdrAutoInfo}"
+                                                                   FontSize="10"
+                                                                   TextWrapping="Wrap"
+                                                                   IsVisible="{Binding HdrAutoInfo, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                                                    </StackPanel>
+                                                </StackPanel>
+
+                                                <!-- Reorder arrows -->
+                                                <StackPanel Grid.Column="2"
+                                                            VerticalAlignment="Center"
+                                                            Spacing="2"
+                                                            Width="30">
+                                                    <Button Classes="move"
+                                                            Command="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).MoveUpCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTip.Tip="Move up">
+                                                        <TextBlock Classes="glyph" Text="&#xE70E;" FontSize="11"/>
+                                                    </Button>
+                                                    <Button Classes="move"
+                                                            Command="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).MoveDownCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTip.Tip="Move down">
+                                                        <TextBlock Classes="glyph" Text="&#xE70D;" FontSize="11"/>
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- Popup options -->
+                            <TextBlock Classes="section" Text="POPUP" Margin="4,6,0,6"/>
+                            <Border Classes="card" Padding="12,10">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Classes="dim"
+                                               Text="Which display the brightness popup appears on."
+                                               TextWrapping="Wrap"
+                                               FontSize="12"/>
+                                    <ComboBox ItemsSource="{Binding PopupScreenOptions}"
+                                              SelectedItem="{Binding SelectedPopupScreen, Mode=TwoWay}"
+                                              HorizontalAlignment="Stretch">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate DataType="vm:PopupScreenOption">
+                                                <TextBlock Text="{Binding Label}"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+
+                                    <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+                                        <TextBlock Text="Master slider"
+                                                   FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   ToolTip.Tip="One slider at the top of the popup that sets all monitors at once"/>
+                                        <ToggleSwitch Grid.Column="1"
+                                                      IsChecked="{Binding ShowMasterSlider, Mode=TwoWay}"
+                                                      OnContent="" OffContent=""
+                                                      Margin="0,-4"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <!-- ============ TAB: SCHEDULE ============ -->
+                <TabItem Header="Schedule">
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="10,10,10,8">
+                            <TextBlock Classes="dim"
+                                       Text="Automatic brightness through the day."
+                                       TextWrapping="Wrap"
+                                       FontSize="12"
+                                       Margin="4,0,0,4"/>
+
+                            <!-- Mini how-to for the graph -->
+                            <Border CornerRadius="8"
+                                    Background="#14FFFFFF"
+                                    Padding="10,7"
+                                    Margin="0,0,0,10">
+                                <StackPanel Spacing="2">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Classes="glyph dim" Text="&#xE7C9;" FontSize="11" VerticalAlignment="Center"/>
+                                        <TextBlock Classes="dim" FontSize="11"
+                                                   Text="Shift + left-click in the graph adds a point"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Classes="glyph dim" Text="&#xE7C2;" FontSize="11" VerticalAlignment="Center"/>
+                                        <TextBlock Classes="dim" FontSize="11"
+                                                   Text="Drag a circle to move it (time snaps to 5 min)"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Classes="glyph dim" Text="&#xE74D;" FontSize="11" VerticalAlignment="Center"/>
+                                        <TextBlock Classes="dim" FontSize="11"
+                                                   Text="Right-click a circle to remove it"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <ItemsControl ItemsSource="{Binding Monitors}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="vm:MonitorNameEntry">
+                                        <Border Classes="card"
+                                                Margin="0,0,0,10"
+                                                Padding="12">
+                                            <StackPanel Spacing="8">
+
+                                                <!-- Monitor header + enable + mode -->
+                                                <Grid ColumnDefinitions="*,Auto,Auto">
+                                                    <TextBlock Text="{Binding Name}"
+                                                               FontSize="12"
+                                                               FontWeight="SemiBold"
+                                                               VerticalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                    <ComboBox Grid.Column="1"
+                                                              ItemsSource="{x:Static vm:MonitorNameEntry.ScheduleModes}"
+                                                              SelectedItem="{Binding ScheduleMode, Mode=TwoWay}"
+                                                              FontSize="11"
+                                                              MinWidth="96"
+                                                              Margin="0,0,10,0"
+                                                              ToolTip.Tip="How to move between points: Linear ramp, hard Steps, or Smooth ease"/>
+                                                    <ToggleSwitch Grid.Column="2"
+                                                                  IsChecked="{Binding ScheduleEnabled, Mode=TwoWay}"
+                                                                  OnContent="" OffContent=""
+                                                                  Margin="0,-4"
+                                                                  ToolTip.Tip="Adjust this monitor's brightness automatically through the day"/>
+                                                </Grid>
+
+                                                <!-- 24h curve (00:00 → 24:00), editable with the mouse -->
+                                                <Border CornerRadius="6"
+                                                        Background="#28000000"
+                                                        BorderBrush="#16FFFFFF"
+                                                        BorderThickness="1"
+                                                        Height="90"
+                                                        ClipToBounds="True"
+                                                        Cursor="Hand"
+                                                        PointerPressed="OnScheduleGraphPressed"
+                                                        PointerMoved="OnScheduleGraphMoved"
+                                                        PointerReleased="OnScheduleGraphReleased"
+                                                        ToolTip.Tip="Shift+click: add point · drag circle: move · right-click circle: remove">
+                                                    <Panel IsHitTestVisible="False">
+                                                        <Viewbox Stretch="Fill">
+                                                            <Canvas Width="240" Height="60">
+                                                                <Polyline Points="{Binding SchedulePreview}"
+                                                                          StrokeThickness="2"
+                                                                          StrokeJoin="Round">
+                                                                    <Polyline.Stroke>
+                                                                        <SolidColorBrush Color="{DynamicResource SystemAccentColor}"/>
+                                                                    </Polyline.Stroke>
+                                                                </Polyline>
+
+                                                                <!-- Point circles -->
+                                                                <ItemsControl Width="240" Height="60"
+                                                                              ItemsSource="{Binding ScheduleMarkers}">
+                                                                    <ItemsControl.ItemsPanel>
+                                                                        <ItemsPanelTemplate>
+                                                                            <Panel/>
+                                                                        </ItemsPanelTemplate>
+                                                                    </ItemsControl.ItemsPanel>
+                                                                    <ItemsControl.ItemTemplate>
+                                                                        <DataTemplate DataType="vm:ScheduleMarker">
+                                                                            <Ellipse Width="9" Height="9"
+                                                                                     HorizontalAlignment="Left"
+                                                                                     VerticalAlignment="Top"
+                                                                                     Margin="{Binding Margin}"
+                                                                                     Stroke="#E8FFFFFF"
+                                                                                     StrokeThickness="1.5">
+                                                                                <Ellipse.Fill>
+                                                                                    <SolidColorBrush Color="{DynamicResource SystemAccentColor}"/>
+                                                                                </Ellipse.Fill>
+                                                                            </Ellipse>
+                                                                        </DataTemplate>
+                                                                    </ItemsControl.ItemTemplate>
+                                                                </ItemsControl>
+                                                            </Canvas>
+                                                        </Viewbox>
+                                                        <TextBlock Classes="dim" Text="0:00" FontSize="9"
+                                                                   HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                                                                   Margin="4,0,0,2"/>
+                                                        <TextBlock Classes="dim" Text="12:00" FontSize="9"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                                                                   Margin="0,0,0,2"/>
+                                                        <TextBlock Classes="dim" Text="24:00" FontSize="9"
+                                                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                                                   Margin="0,0,4,2"/>
+                                                    </Panel>
+                                                </Border>
+
+                                                <!-- Points -->
+                                                <ItemsControl ItemsSource="{Binding SchedulePoints}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate DataType="vm:SchedulePointEntry">
+                                                            <StackPanel Orientation="Horizontal"
+                                                                        Spacing="6"
+                                                                        Margin="0,0,0,4">
+                                                                <TextBox Text="{Binding Time, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                                         Width="64"
+                                                                         FontSize="11"
+                                                                         CornerRadius="6"
+                                                                         PlaceholderText="HH:mm"
+                                                                         ToolTip.Tip="Shortcuts: 15 → 15:00, 1525 → 15:25, 930 → 09:30"/>
+                                                                <NumericUpDown Value="{Binding Percent, Mode=TwoWay}"
+                                                                               Minimum="0" Maximum="100"
+                                                                               Increment="5"
+                                                                               FormatString="0"
+                                                                               Width="110"
+                                                                               FontSize="11"
+                                                                               CornerRadius="6"/>
+                                                                <TextBlock Classes="dim" Text="%"
+                                                                           FontSize="11"
+                                                                           VerticalAlignment="Center"/>
+                                                                <Button Classes="chip"
+                                                                        Content="✕"
+                                                                        Command="{Binding $parent[ItemsControl].((vm:MonitorNameEntry)DataContext).RemoveSchedulePointCommand}"
+                                                                        CommandParameter="{Binding}"
+                                                                        ToolTip.Tip="Remove point"/>
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+
+                                                <Button Classes="chip"
+                                                        Content="+ Add point"
+                                                        HorizontalAlignment="Left"
+                                                        Command="{Binding AddSchedulePointCommand}"/>
                                             </StackPanel>
                                         </Border>
-
-                                        <StackPanel Grid.Column="1" Margin="12,0,12,0" Spacing="3">
-                                            <TextBlock Text="{Binding Description}"
-                                                       FontSize="12"
-                                                       FontWeight="SemiBold"
-                                                       TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock Classes="dim"
-                                                       Text="{Binding Monitor.GdiDeviceName}"
-                                                       FontFamily="Cascadia Mono,Consolas"
-                                                       FontSize="10"/>
-                                            <TextBox Text="{Binding Name, Mode=TwoWay}"
-                                                     Margin="0,3,0,0"
-                                                     CornerRadius="6"
-                                                     PlaceholderText="{Binding Description}"/>
-
-                                            <!-- HDR slider range (only for HDR-capable monitors) -->
-                                            <StackPanel Margin="0,4,0,0"
-                                                        Spacing="3"
-                                                        IsVisible="{Binding SupportsHdr}">
-                                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                                    <TextBlock Classes="dim"
-                                                               Text="HDR max"
-                                                               FontSize="11"
-                                                               VerticalAlignment="Center"
-                                                               ToolTip.Tip="SDR white level at 100 % of the slider. Windows caps this at 480 nits — use a lower value to limit the range."/>
-                                                    <NumericUpDown Value="{Binding HdrMaxNits, Mode=TwoWay}"
-                                                                   Minimum="100" Maximum="480"
-                                                                   Increment="20"
-                                                                   FormatString="0"
-                                                                   Width="130"
-                                                                   FontSize="11"
-                                                                   CornerRadius="6"/>
-                                                    <TextBlock Classes="dim"
-                                                               Text="nits"
-                                                               FontSize="11"
-                                                               VerticalAlignment="Center"/>
-                                                    <Button Classes="chip"
-                                                            Content="Auto"
-                                                            Command="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).AutoHdrMaxCommand}"
-                                                            CommandParameter="{Binding}"
-                                                            ToolTip.Tip="Fill in what the panel reports in its EDID (DXGI). You can still edit the value afterwards."/>
-                                                    <Button Classes="chip"
-                                                            Content="Default"
-                                                            Command="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).ResetHdrMaxCommand}"
-                                                            CommandParameter="{Binding}"
-                                                            ToolTip.Tip="Reset to the built-in default (480 nits)"/>
-                                                </StackPanel>
-                                                <TextBlock Classes="dim"
-                                                           Text="{Binding HdrAutoInfo}"
-                                                           FontSize="10"
-                                                           TextWrapping="Wrap"
-                                                           IsVisible="{Binding HdrAutoInfo, Converter={x:Static ObjectConverters.IsNotNull}}"/>
-                                            </StackPanel>
-                                        </StackPanel>
-
-                                        <!-- Reorder arrows -->
-                                        <StackPanel Grid.Column="2"
-                                                    VerticalAlignment="Center"
-                                                    Spacing="2"
-                                                    Width="30">
-                                            <Button Classes="move"
-                                                    Command="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).MoveUpCommand}"
-                                                    CommandParameter="{Binding}"
-                                                    ToolTip.Tip="Move up">
-                                                <TextBlock Classes="glyph" Text="&#xE70E;" FontSize="11"/>
-                                            </Button>
-                                            <Button Classes="move"
-                                                    Command="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).MoveDownCommand}"
-                                                    CommandParameter="{Binding}"
-                                                    ToolTip.Tip="Move down">
-                                                <TextBlock Classes="glyph" Text="&#xE70D;" FontSize="11"/>
-                                            </Button>
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
-            </ScrollViewer>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+            </TabControl>
         </DockPanel>
     </Panel>
 </Window>

@@ -24,7 +24,7 @@ namespace G_Lumen.Services
 
         // DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY — values meaning "built-in panel".
         public const uint DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EMBEDDED = 11;
-        public const uint DISPLAYCONFIG_OUTPUT_TECHNOLOGY_UDI_EMBEDDED = 14;
+        public const uint DISPLAYCONFIG_OUTPUT_TECHNOLOGY_UDI_EMBEDDED = 13;
         public const uint DISPLAYCONFIG_OUTPUT_TECHNOLOGY_INTERNAL = 0x80000000;
 
         [StructLayout(LayoutKind.Sequential)]

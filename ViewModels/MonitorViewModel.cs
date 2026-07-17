@@ -103,6 +103,9 @@ namespace G_Lumen.ViewModels
         /// <summary>HDR state at startup ("supported · active" etc.).</summary>
         public string HdrStatusText { get; }
 
+        /// <summary>Connection type from DisplayConfig ("DisplayPort · 0xA", "DVI · 0x4"…).</summary>
+        public string ConnectionInfo => _hdr.GetConnectionInfo(_monitor.GdiDeviceName);
+
         /// <summary>Stable ID for persistence (key into settings).</summary>
         public string StableId => _monitor.StableId;
 

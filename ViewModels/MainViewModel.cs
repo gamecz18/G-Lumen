@@ -1,13 +1,16 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using G_Lumen.Services;
 using G_Lumen.Views;
 using Microsoft.Extensions.Logging;
+using Microsoft.Win32;
 
 namespace G_Lumen.ViewModels
 {
@@ -24,7 +27,17 @@ namespace G_Lumen.ViewModels
         private readonly AutostartManager _autostart;
         private readonly ILogger _log;
         private bool _suppressAutostartWrite;
+        private bool _suppressMasterWrite;
         private SettingsWindow? _settingsWindow;
+
+        // Scheduler: last value applied per monitor, so a manual slider tweak
+        // isn't overridden until the curve actually moves to a new value.
+        private readonly DispatcherTimer _scheduleTimer;
+        private readonly Dictionary<string, int> _lastScheduled = new();
+
+        // Debounce for auto apply: wake and hotplug fire several events in a burst,
+        // and monitors need a few seconds before they accept DDC again.
+        private readonly DispatcherTimer _reapplyTimer;
 
         public MainViewModel(DdcCiService ddc, HdrService hdr, WmiBrightnessService wmi,
             SettingsStore settings, AutostartManager autostart, ILogger logger, TrafficLog traffic)
@@ -41,7 +54,48 @@ namespace G_Lumen.ViewModels
             AutostartEnabled = _autostart.IsEnabled;
             _suppressAutostartWrite = false;
 
+            _showMasterSlider = settings.GetShowMasterSlider();
+            _autoApplyEnabled = settings.GetAutoApply();
+
             Refresh();
+
+            _scheduleTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+            _scheduleTimer.Tick += (_, _) => ApplySchedules();
+            _scheduleTimer.Start();
+            ApplySchedules();
+
+            _reapplyTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+            _reapplyTimer.Tick += (_, _) =>
+            {
+                _reapplyTimer.Stop();
+                _log.LogInformation("Auto apply: re-sending brightness after wake/display change");
+                Refresh();
+                ApplyAll();
+            };
+
+            SystemEvents.PowerModeChanged += OnPowerModeChanged;
+            SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
+        }
+
+        private void OnPowerModeChanged(object? sender, PowerModeChangedEventArgs e)
+        {
+            if (e.Mode == PowerModes.Resume)
+                ScheduleAutoApply();
+        }
+
+        private void OnDisplaySettingsChanged(object? sender, EventArgs e)
+            => ScheduleAutoApply();
+
+        /// <summary>(Re)starts the debounce timer on the UI thread.</summary>
+        private void ScheduleAutoApply()
+        {
+            if (!AutoApplyEnabled)
+                return;
+            Dispatcher.UIThread.Post(() =>
+            {
+                _reapplyTimer.Stop();
+                _reapplyTimer.Start();
+            });
         }
 
         public ObservableCollection<MonitorViewModel> Monitors { get; } = new();
@@ -72,6 +126,84 @@ namespace G_Lumen.ViewModels
         [ObservableProperty]
         private bool _showDiagnostics;
 
+        /// <summary>Master slider — drives all monitors at once.</summary>
+        [ObservableProperty]
+        private int _masterBrightness = 50;
+
+        /// <summary>Master slider enabled in Settings (updated live on save).</summary>
+        [ObservableProperty]
+        private bool _showMasterSlider;
+
+        /// <summary>What the popup actually binds to: enabled AND monitors exist.</summary>
+        public bool MasterSliderVisible => ShowMasterSlider && Monitors.Count > 0;
+
+        /// <summary>Automatically re-send brightness after wake / display changes.</summary>
+        [ObservableProperty]
+        private bool _autoApplyEnabled;
+
+        partial void OnAutoApplyEnabledChanged(bool value)
+        {
+            _settings.SetAutoApply(value);
+            _settings.Save();
+            _log.LogInformation("Auto apply {State}", value ? "enabled" : "disabled");
+        }
+
+        /// <summary>Force-sends the current value of every monitor right now.</summary>
+        [RelayCommand]
+        private void ApplyAll()
+        {
+            foreach (var m in Monitors)
+                m.ForceApplyCommand.Execute(null);
+            _log.LogInformation("Apply all: {Count} monitor(s)", Monitors.Count);
+        }
+
+        partial void OnShowMasterSliderChanged(bool value)
+            => OnPropertyChanged(nameof(MasterSliderVisible));
+
+        partial void OnMasterBrightnessChanged(int value)
+        {
+            if (_suppressMasterWrite)
+                return;
+            foreach (var m in Monitors)
+                m.Brightness = value;
+        }
+
+        /// <summary>
+        /// Applies daily schedules. A new value is pushed only when the curve
+        /// prescribes something different from its last application — manual
+        /// adjustments in between are left alone.
+        /// </summary>
+        private void ApplySchedules()
+        {
+            try
+            {
+                var now = DateTime.Now.TimeOfDay;
+                foreach (var m in Monitors)
+                {
+                    var schedule = _settings.GetSchedule(m.StableId);
+                    if (schedule is not { Enabled: true })
+                    {
+                        _lastScheduled.Remove(m.StableId);
+                        continue;
+                    }
+
+                    if (ScheduleEvaluator.Evaluate(schedule, now) is not int target)
+                        continue;
+
+                    if (_lastScheduled.TryGetValue(m.StableId, out int last) && last == target)
+                        continue;
+
+                    _lastScheduled[m.StableId] = target;
+                    m.Brightness = target;
+                    _log.LogDebug("Schedule: {Monitor} -> {Target}%", m.Name, target);
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.LogWarning(ex, "Applying schedules failed");
+            }
+        }
+
         [RelayCommand]
         private void Refresh()
         {
@@ -92,6 +224,15 @@ namespace G_Lumen.ViewModels
 
                 foreach (var info in infos)
                     Monitors.Add(new MonitorViewModel(_ddc, _hdr, _wmi, _settings, info));
+
+                // Master slider starts at the average without pushing writes.
+                _suppressMasterWrite = true;
+                MasterBrightness = Monitors.Count > 0
+                    ? (int)Math.Round(Monitors.Average(m => m.Brightness))
+                    : 50;
+                _suppressMasterWrite = false;
+                OnPropertyChanged(nameof(MasterSliderVisible));
+
                 _log.LogInformation("Refresh: found {Count} monitor(s)", Monitors.Count);
             }
             catch (Exception ex)
@@ -113,7 +254,7 @@ namespace G_Lumen.ViewModels
 
                 _settingsWindow = new SettingsWindow
                 {
-                    DataContext = new SettingsViewModel(_settings, Monitors),
+                    DataContext = new SettingsViewModel(_settings, this),
                 };
                 _settingsWindow.Closed += (_, _) => _settingsWindow = null;
                 _settingsWindow.Show();

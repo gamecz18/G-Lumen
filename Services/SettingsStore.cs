@@ -33,7 +33,7 @@ namespace G_Lumen.Services
                 if (File.Exists(_path))
                 {
                     string json = File.ReadAllText(_path);
-                    _data = JsonSerializer.Deserialize<SettingsData>(json) ?? new SettingsData();
+                    _data = JsonSerializer.Deserialize<SettingsData>(json, SerializerOptions) ?? new SettingsData();
                 }
             }
             catch (Exception ex)
@@ -112,6 +112,28 @@ namespace G_Lumen.Services
         public void SetPopupMonitor(string? stableId)
             => _data.PopupMonitor = stableId;
 
+        /// <summary>Show the master slider (all monitors at once) in the popup. Default on.</summary>
+        public bool GetShowMasterSlider() => _data.ShowMasterSlider ?? true;
+
+        public void SetShowMasterSlider(bool value) => _data.ShowMasterSlider = value;
+
+        /// <summary>Re-apply saved brightness automatically after wake / display changes. Default on.</summary>
+        public bool GetAutoApply() => _data.AutoApply ?? true;
+
+        public void SetAutoApply(bool value) => _data.AutoApply = value;
+
+        /// <summary>Daily brightness schedule for the monitor, or null if none was set.</summary>
+        public ScheduleData? GetSchedule(string stableId)
+            => _data.Schedules.TryGetValue(stableId, out var s) ? s : null;
+
+        public void SetSchedule(string stableId, ScheduleData? schedule)
+        {
+            if (schedule is null || schedule.Points.Count == 0)
+                _data.Schedules.Remove(stableId);
+            else
+                _data.Schedules[stableId] = schedule;
+        }
+
         /// <summary>
         /// Saved display order of monitors (StableIds, first = top of the popup).
         /// Monitors not in the list keep their enumeration order at the end.
@@ -124,6 +146,7 @@ namespace G_Lumen.Services
         private static readonly JsonSerializerOptions SerializerOptions = new()
         {
             WriteIndented = true,
+            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() },
         };
 
         private sealed class SettingsData
@@ -132,8 +155,11 @@ namespace G_Lumen.Services
             public Dictionary<string, string> Names { get; set; } = new();
             public Dictionary<string, bool> HdrMode { get; set; } = new();
             public Dictionary<string, double> HdrMaxNits { get; set; } = new();
+            public Dictionary<string, ScheduleData> Schedules { get; set; } = new();
             public List<string> Order { get; set; } = new();
             public string? PopupMonitor { get; set; }
+            public bool? ShowMasterSlider { get; set; }
+            public bool? AutoApply { get; set; }
         }
     }
 }

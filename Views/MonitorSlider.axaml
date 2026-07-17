@@ -108,7 +108,7 @@
                     Margin="0,6,0,0" Padding="10,7" CornerRadius="6"
                     Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
                 <Grid ColumnDefinitions="60,*"
-                      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+                      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
 
                     <TextBlock Classes="detailKey" Text="ID"/>
                     <SelectableTextBlock Grid.Column="1" Classes="detail"
@@ -118,20 +118,24 @@
                     <SelectableTextBlock Grid.Row="1" Grid.Column="1" Classes="detail"
                                          Text="{Binding GdiDeviceName}" Margin="0,1"/>
 
-                    <TextBlock Grid.Row="2" Classes="detailKey" Text="Handle"/>
+                    <TextBlock Grid.Row="2" Classes="detailKey" Text="Output"/>
                     <SelectableTextBlock Grid.Row="2" Grid.Column="1" Classes="detail"
+                                         Text="{Binding ConnectionInfo}" Margin="0,1"/>
+
+                    <TextBlock Grid.Row="3" Classes="detailKey" Text="Handle"/>
+                    <SelectableTextBlock Grid.Row="3" Grid.Column="1" Classes="detail"
                                          Text="{Binding HandleHex}" Margin="0,1"/>
 
-                    <TextBlock Grid.Row="3" Classes="detailKey" Text="HDR"/>
-                    <SelectableTextBlock Grid.Row="3" Grid.Column="1" Classes="detail"
+                    <TextBlock Grid.Row="4" Classes="detailKey" Text="HDR"/>
+                    <SelectableTextBlock Grid.Row="4" Grid.Column="1" Classes="detail"
                                          Text="{Binding HdrStatusText}" Margin="0,1"/>
 
-                    <TextBlock Grid.Row="4" Classes="detailKey" Text="Write"/>
-                    <SelectableTextBlock Grid.Row="4" Grid.Column="1" Classes="detail"
+                    <TextBlock Grid.Row="5" Classes="detailKey" Text="Write"/>
+                    <SelectableTextBlock Grid.Row="5" Grid.Column="1" Classes="detail"
                                          Text="{Binding WriteInfo}" Margin="0,1"/>
 
-                    <TextBlock Grid.Row="5" Classes="detailKey" Text="Read"/>
-                    <SelectableTextBlock Grid.Row="5" Grid.Column="1" Classes="detail"
+                    <TextBlock Grid.Row="6" Classes="detailKey" Text="Read"/>
+                    <SelectableTextBlock Grid.Row="6" Grid.Column="1" Classes="detail"
                                          Text="{Binding ReadInfo}" Margin="0,1"/>
                 </Grid>
             </Border>

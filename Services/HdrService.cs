@@ -107,6 +107,40 @@ namespace G_Lumen.Services
                    or DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EMBEDDED
                    or DISPLAYCONFIG_OUTPUT_TECHNOLOGY_UDI_EMBEDDED;
 
+        /// <summary>
+        /// Human-readable connection type ("DisplayPort · 0xA") for the monitor
+        /// detail panel — HDR problems are usually cable problems (DVI can't do HDR).
+        /// </summary>
+        public string GetConnectionInfo(string gdiDeviceName)
+        {
+            if (!_targets.TryGetValue(gdiDeviceName, out var t))
+                return "unknown (no DisplayConfig path)";
+
+            string name = t.outputTechnology switch
+            {
+                0 => "VGA",
+                1 => "S-Video",
+                2 => "Composite",
+                3 => "Component",
+                4 => "DVI",
+                5 => "HDMI",
+                6 => "LVDS",
+                9 => "SDI",
+                10 => "DisplayPort",
+                11 => "DisplayPort (embedded)",
+                12 => "UDI",
+                13 => "UDI (embedded)",
+                14 => "SDTV dongle",
+                15 => "Miracast",
+                16 => "Indirect (wired)",
+                17 => "Indirect (virtual)",
+                DISPLAYCONFIG_OUTPUT_TECHNOLOGY_INTERNAL => "Internal panel",
+                0xFFFFFFFF => "Other",
+                _ => "Unknown",
+            };
+            return $"{name} · 0x{t.outputTechnology:X}";
+        }
+
         /// <summary>Does the monitor support advanced color (HDR), whether it's currently on or not?</summary>
         public bool IsHdrAvailable(string gdiDeviceName)
             => TryGetAdvancedColor(gdiDeviceName, out var info) && info.AdvancedColorSupported;
